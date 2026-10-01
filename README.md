@@ -50,6 +50,11 @@ A equipe fica em **Configurações → Equipe** (tabela `hd_equipe`), separada d
 - Cada cartão tem previsão de entrega (alerta de atraso), checklist e histórico de etapas; o quadro mostra o tempo médio em cada etapa (últimos 180 dias).
 - O solicitante vê o andamento no chamado e recebe e-mail a cada mudança de etapa.
 
+### Indicadores
+Aba **Indicadores** (TI/admin): SLA cumprido, abertos × concluídos, pendentes, tempo médio de 1ª resposta e de resolução (com mediana e comparação com o período anterior), pendentes por idade/prioridade, abertos por setor, tabelas por categoria e por responsável e os pendentes mais antigos. Filtros de período, categoria e responsável.
+- **SLA cumprido** = concluídos no período com prazo de SLA que foram resolvidos dentro do prazo.
+- **1ª resposta** = primeira mensagem da equipe visível ao colaborador (notas internas não contam).
+
 ### 5. Notificações por e-mail
 O Supabase coloca os e-mails numa fila (`hd_notificacoes`) e, a cada minuto, chama `/api/notificar` (função da Vercel), que envia pelo SMTP da empresa. O envio sai pela Vercel porque as funções do Supabase não podem usar a porta 587.
 

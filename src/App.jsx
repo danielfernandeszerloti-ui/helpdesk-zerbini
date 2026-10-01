@@ -8,6 +8,7 @@ import NovoChamado from './pages/NovoChamado'
 import Chamado from './pages/Chamado'
 import Configuracoes from './pages/Configuracoes'
 import Kanban from './pages/Kanban'
+import Indicadores from './pages/Indicadores'
 
 function Carregando() {
   return <div className="tela-cheia"><div className="spinner" aria-label="Carregando" /></div>
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/novo" element={<NovoChamado />} />
         <Route path="/chamado/:id" element={<Chamado />} />
         {agente && <Route path="/painel" element={<Painel />} />}
+        {agente && <Route path="/indicadores" element={<Indicadores />} />}
         {(agente || dev) && <Route path="/kanban" element={<Kanban />} />}
         {agente && <Route path="/configuracoes" element={<Configuracoes />} />}
         {agente && <Route path="/categorias" element={<Navigate to="/configuracoes" replace />} />}

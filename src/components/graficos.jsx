@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 // Cores validadas (CVD/contraste) para as duas séries do dashboard
-export const COR_ABERTOS = '#2f42c4'
-export const COR_CONCLUIDOS = '#0e9a95'
+// Cores validadas (CVD/contraste) em cada tema — definidas em styles.css (--serie-1 / --serie-2)
+export const COR_ABERTOS = 'var(--serie-1)'
+export const COR_CONCLUIDOS = 'var(--serie-2)'
 
 function usarLargura() {
   const ref = useRef(null)
@@ -66,16 +67,16 @@ export function LinhasTempo({ rotulos, series, altura = 240, titulos }) {
               <text x={m.l - 8} y={y(v)} className="eixo" textAnchor="end" dominantBaseline="middle">{v.toLocaleString('pt-BR')}</text>
             </g>
           ))}
-          {rotulos.map((r, i) => ((i % cadaX === 0 && n - 1 - i >= Math.ceil(cadaX / 2)) || i === n - 1) && (
+          {rotulos.map((r, i) => ((i % cadaX === 0 && n - 1 - i >= Math.max(2, cadaX)) || i === n - 1) && (
             <text key={i} x={x(i)} y={altura - 8} className="eixo" textAnchor={i === 0 ? 'start' : i === n - 1 ? 'end' : 'middle'}>{r}</text>
           ))}
           {foco != null && <line x1={x(foco)} x2={x(foco)} y1={m.t} y2={m.t + h} className="crosshair" />}
           {series.map((s) => (
             <g key={s.nome}>
-              <path d={`M${s.valores.map((v, i) => `${x(i)},${y(v)}`).join('L')}L${x(n - 1)},${y(0)}L${x(0)},${y(0)}Z`} fill={s.cor} opacity="0.08" />
-              <polyline points={s.valores.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" stroke={s.cor} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-              <circle cx={x(n - 1)} cy={y(s.valores[n - 1] || 0)} r="4" fill={s.cor} stroke="#fff" strokeWidth="2" />
-              {foco != null && <circle cx={x(foco)} cy={y(s.valores[foco] || 0)} r="5" fill={s.cor} stroke="#fff" strokeWidth="2" />}
+              <path d={`M${s.valores.map((v, i) => `${x(i)},${y(v)}`).join('L')}L${x(n - 1)},${y(0)}L${x(0)},${y(0)}Z`} style={{ fill: s.cor }} opacity="0.08" />
+              <polyline points={s.valores.map((v, i) => `${x(i)},${y(v)}`).join(' ')} fill="none" style={{ stroke: s.cor }} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+              <circle cx={x(n - 1)} cy={y(s.valores[n - 1] || 0)} r="4" style={{ fill: s.cor, stroke: 'var(--sup)' }} strokeWidth="2" />
+              {foco != null && <circle cx={x(foco)} cy={y(s.valores[foco] || 0)} r="5" style={{ fill: s.cor, stroke: 'var(--sup)' }} strokeWidth="2" />}
             </g>
           ))}
         </svg>

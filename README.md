@@ -107,3 +107,8 @@ As migrações estão em `supabase/migrations/` (já aplicadas no projeto):
 - Primeira resposta da TI em chamado **Novo** muda para **Aberto**.
 - O prazo de SLA vem das horas configuradas na categoria (tela *Categorias*).
 - Imagens acima de 800 KB são reduzidas no navegador antes do envio.
+
+### Atendimento e aparência
+- **Configurações → Equipe → Atende chamados**: define quem aparece em "Atribuído a" e recebe e-mail de chamado novo. Quem não atende (ex.: gestores) continua vendo tudo.
+- **Atribuir novos chamados automaticamente a**: responsável padrão dos chamados novos fora do Kanban (`hd_config.responsavel_padrao`).
+- **Tema escuro**: botão de lua/sol no topo (e na tela de login). Na primeira visita segue o tema do sistema; a escolha fica salva no navegador.

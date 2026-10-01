@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Mail, ArrowLeft } from 'lucide-react'
+import { Mail, ArrowLeft, Moon, Sun } from 'lucide-react'
+import { useTema } from '../lib/tema'
 import { supabase } from '../lib/supabase'
 import { mensagemErro } from '../lib/util'
 
 export default function Login() {
+  const [tema, alternarTema] = useTema()
   const [email, setEmail] = useState(() => localStorage.getItem('hd_ultimo_email') || '')
   const [etapa, setEtapa] = useState('email')
   const [codigo, setCodigo] = useState('')
@@ -52,8 +54,13 @@ export default function Login() {
       </div>
 
       <div className="login-form">
+        <button className="btn-icone btn-tema login-tema" onClick={alternarTema} aria-label={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'}
+          title={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'}>
+          {tema === 'escuro' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         <div className="login-marca">
-          <img src="/logo-z-azul.png" alt="Grupo Zerbini" />
+          <img src="/logo-z-azul.png" alt="Grupo Zerbini" className="logo-claro" />
+          <img src="/logo-z-branco.png" alt="Grupo Zerbini" className="logo-escuro" />
           <div>
             <h1>Zerbini Helpdesk</h1>
             <p>Chamados internos do Grupo Zerbini</p>

@@ -1,24 +1,31 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3 } from 'lucide-react'
+import { LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, Moon, Sun } from 'lucide-react'
+import { useTema } from '../lib/tema'
 import { useSessao } from '../lib/sessao'
 import { nomeDeEmail } from '../lib/util'
 import { Avatar } from './ui'
 
 export default function Layout() {
   const { perfil, sair } = useSessao()
+  const [tema, alternarTema] = useTema()
   const nome = perfil.nome || nomeDeEmail(perfil.email)
   return (
     <div className="app">
       <header className="topo">
         <div className="topo-interno">
           <NavLink to="/" className="marca">
-            <img src="/logo-z-azul.png" alt="" className="marca-logo" />
+            <img src="/logo-z-azul.png" alt="" className="marca-logo logo-claro" />
+            <img src="/logo-z-branco.png" alt="" className="marca-logo logo-escuro" />
             <span>
               <strong>Zerbini Helpdesk</strong>
               <small>Grupo Zerbini</small>
             </span>
           </NavLink>
           <div className="usuario">
+            <button className="btn-icone btn-tema" onClick={alternarTema}
+              title={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'} aria-label={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'}>
+              {tema === 'escuro' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             <Avatar nome={nome} />
             <span className="usuario-nome">{nome}</span>
             <button className="btn-icone" onClick={sair} title="Sair" aria-label="Sair"><LogOut size={18} /></button>

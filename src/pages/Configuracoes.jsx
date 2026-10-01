@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Plus, Save, Tags, Layers, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
@@ -163,7 +163,21 @@ function Etapas() {
 function Equipe() {
   const { perfil, equipe, carregarEquipe, avisar } = useSessao()
   const [novo, setNovo] = useState({ email: '', papel: 'ti' })
+  const [padrao, setPadrao] = useState('')
   const admin = perfil.papel === 'admin'
+
+  useEffect(() => {
+    supabase.from('hd_config').select('valor').eq('chave', 'responsavel_padrao').maybeSingle()
+      .then(({ data }) => setPadrao(data?.valor || ''))
+  }, [])
+
+  async function salvarPadrao(valor) {
+    const { error } = await supabase.from('hd_config').upsert({ chave: 'responsavel_padrao', valor })
+    if (error) return avisar(mensagemErro(error), 'erro')
+    setPadrao(valor)
+    avisar(valor ? `Novos chamados serão atribuídos a ${nomeDeEmail(valor)}` : 'Novos chamados ficarão sem responsável')
+  }
+  const atendentesTI = equipe.filter((m) => m.ativo && m.atende && m.papel !== 'dev')
 
   async function adicionar(e) {
     e.preventDefault()
@@ -187,7 +201,7 @@ function Equipe() {
 
   return (
     <>
-      <p className="texto-suave">Quem atende no helpdesk. Esta lista é só do helpdesk — não dá acesso à Gestão de Ativos. Qualquer pessoa com e-mail @grupozerbini.com.br pode abrir chamados sem estar aqui.</p>
+      <p className="texto-suave">Quem atende no helpdesk. <b>Atende chamados</b> define quem aparece em "Atribuído a" e recebe e-mail de chamado novo; quem não atende continua vendo tudo. Esta lista é só do helpdesk — não dá acesso à Gestão de Ativos. Qualquer pessoa com e-mail @grupozerbini.com.br pode abrir chamados sem estar aqui.</p>
       {admin && (
         <form className="cartao nova-categoria" onSubmit={adicionar}>
           <input type="email" placeholder="nome.sobrenome@grupozerbini.com.br" value={novo.email} onChange={(e) => setNovo({ ...novo, email: e.target.value })} />
@@ -197,10 +211,21 @@ function Equipe() {
           <button className="btn btn-primario"><Plus size={16} /> Adicionar</button>
         </form>
       )}
+      <div className="cartao config-linha">
+        <div>
+          <strong>Atribuir novos chamados automaticamente a</strong>
+          <small className="sub">Vale para chamados fora do Kanban. A pessoa precisa estar marcada em "Atende chamados".</small>
+        </div>
+        <select value={atendentesTI.some((m) => m.email === padrao) ? padrao : ''} disabled={!admin}
+          onChange={(e) => salvarPadrao(e.target.value)} aria-label="Responsável padrão">
+          <option value="">Ninguém (fica "Não atribuído")</option>
+          {atendentesTI.map((m) => <option key={m.email} value={m.email}>{m.nome || nomeDeEmail(m.email)}</option>)}
+        </select>
+      </div>
       <div className="cartao tabela-cartao">
         <div className="tabela-rolagem">
           <table className="tabela tabela-edicao">
-            <thead><tr><th>Pessoa</th><th>Perfil</th><th>Situação</th></tr></thead>
+            <thead><tr><th>Pessoa</th><th>Perfil</th><th>Atende chamados</th><th>Situação</th></tr></thead>
             <tbody>
               {equipe.map((m) => (
                 <tr key={m.email} className={m.ativo ? '' : 'inativa'}>
@@ -212,6 +237,15 @@ function Equipe() {
                       </select>
                     ) : PAPEIS[m.papel]?.rotulo}
                     <small className="sub">{PAPEIS[m.papel]?.desc}</small>
+                  </td>
+                  <td>
+                    {admin ? (
+                      <label className="interruptor" title="Aparece em &quot;Atribuído a&quot; e recebe e-mail de chamados novos">
+                        <input type="checkbox" checked={!!m.atende} onChange={(e) => alterar(m.email, { atende: e.target.checked }, e.target.checked ? 'Agora aparece em "Atribuído a"' : 'Removido de "Atribuído a"')} />
+                        <span>{m.atende ? 'Sim' : 'Não'}</span>
+                      </label>
+                    ) : (m.atende ? 'Sim' : 'Não')}
+                    <small className="sub">{m.atende ? 'aparece em "Atribuído a"' : 'só acompanha'}</small>
                   </td>
                   <td>
                     {admin ? (

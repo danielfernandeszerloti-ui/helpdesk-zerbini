@@ -108,7 +108,7 @@ export default function Indicadores() {
   const atual = useMemo(() => calcular(lista, ini, fim), [lista, ini, fim])
   const anterior = useMemo(() => calcular(lista, iniAnt, ini), [lista, iniAnt, ini])
   const pendentes = useMemo(() => lista.filter((c) => !finalizado(c)), [lista])
-  const atrasados = pendentes.filter((c) => c.prazo_sla && new Date(c.prazo_sla) < new Date())
+  const atrasados = pendentes.filter((c) => c.status !== 'em_espera' && c.prazo_sla && new Date(c.prazo_sla) < new Date())
 
   // Série no tempo: por dia até 45 dias; por semana acima disso
   const serie = useMemo(() => {

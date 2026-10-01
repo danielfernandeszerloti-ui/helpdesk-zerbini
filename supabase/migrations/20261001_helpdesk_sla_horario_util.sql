@@ -1,0 +1,9 @@
+-- SLA em horário comercial (seg–sex, 08:00–17:45, America/Sao_Paulo), feriados e pausa em "Em espera".
+-- Aplicado no Supabase em duas partes: helpdesk_sla_horario_util e helpdesk_sla_gatilhos.
+-- Funções: hd_somar_horas_uteis(inicio, horas), hd_horas_uteis_entre(a, b)
+-- Tabela: hd_feriados(data, descricao) — dias sem expediente
+-- Coluna: hd_chamados.sla_pausado_em — preenchida enquanto o status é "em_espera";
+--   ao sair, o prazo é empurrado pelas horas úteis que restavam no momento da pausa.
+-- Gatilhos: hd_chamado_antes_inserir (prazo em horas úteis) e hd_chamado_antes_atualizar
+--   (pausa/retomada e recálculo do prazo quando a categoria muda).
+-- Horário configurável em hd_config: expediente_inicio / expediente_fim.

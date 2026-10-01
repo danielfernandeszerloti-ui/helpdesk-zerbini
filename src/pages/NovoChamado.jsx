@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import { enviarAnexos, mensagemErro, nomeDeEmail } from '../lib/util'
+import { enviarAnexos, mensagemErro, nomeDeEmail, EXPEDIENTE } from '../lib/util'
 import { SeletorArquivos } from '../components/ui'
 
 export default function NovoChamado() {
@@ -79,6 +79,12 @@ export default function NovoChamado() {
             <option value="">Selecione uma opção</option>
             {ativas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
+          {(() => {
+            const sel = categorias.find((c) => String(c.id) === String(f.categoria_id))
+            if (!sel?.sla_horas || sel.kanban) return null
+            const h = sel.sla_horas
+            return <small className="dica">Prazo de atendimento desta categoria: até {h} {h === 1 ? 'hora útil' : 'horas úteis'} ({EXPEDIENTE}).</small>
+          })()}
         </label>
 
         <label className="campo">

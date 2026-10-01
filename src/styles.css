@@ -496,3 +496,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .dash-card { overflow: hidden; }
 @media (max-width: 720px) { .dash-grade { grid-template-columns: minmax(0, 1fr); } }
 .tabela-dash td, .tabela-dash th { white-space: nowrap; }
+.sla-pausado { color: #92400e; }
+.previsao-col.ok { color: #0b7d79; font-weight: 500; }
+.previsao-col.pausado { color: #92400e; }
+.previsao-col.vencido { color: var(--suave); }

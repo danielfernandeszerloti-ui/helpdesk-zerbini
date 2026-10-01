@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, Inbox, ChevronRight } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import { codigo, emAndamento, tempoRelativo, nomeDeEmail } from '../lib/util'
+import { codigo, emAndamento, tempoRelativo, nomeDeEmail, previsaoColaborador } from '../lib/util'
 import { StatusBadge, Vazio } from '../components/ui'
 
 export default function MeusChamados() {
@@ -14,7 +14,7 @@ export default function MeusChamados() {
   useEffect(() => {
     let vivo = true
     const carregar = () => supabase.from('hd_chamados')
-      .select('id,titulo,status,atualizado_em,criado_em,atribuido_email,lido_solicitante,categoria:hd_categorias(nome)')
+      .select('id,titulo,status,atualizado_em,criado_em,atribuido_email,lido_solicitante,prazo_sla,etapa_id,categoria:hd_categorias(nome)')
       .eq('solicitante_email', perfil.email).order('atualizado_em', { ascending: false }).limit(500)
       .then(({ data }) => vivo && setLista(data || []))
     carregar()
@@ -69,6 +69,7 @@ export default function MeusChamados() {
                   <span>{c.categoria?.nome || 'Sem categoria'}</span>
                   <span>·</span>
                   <span>{c.atribuido_email ? `Com ${nomeDeEmail(c.atribuido_email)}` : 'Aguardando atendimento'}</span>
+                  {previsaoColaborador(c) && <><span>·</span><span className={'previsao-col ' + previsaoColaborador(c).tipo}>{previsaoColaborador(c).texto}</span></>}
                   <span>·</span>
                   <span>Atualizado {tempoRelativo(c.atualizado_em)}</span>
                 </div>

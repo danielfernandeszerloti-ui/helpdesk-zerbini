@@ -5,7 +5,7 @@ import { supabase, BUCKET } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
   codigo, dataHora, tempoRelativo, nomeDeEmail, enviarAnexos, abrirAnexo, tamanhoLegivel, mensagemErro,
-  emAndamento, STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, dataCurta, previsaoAtrasada,
+  emAndamento, STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, dataCurta, previsaoAtrasada, previsaoColaborador,
 } from '../lib/util'
 import { Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
 
@@ -418,6 +418,7 @@ export default function Chamado() {
                 <dt>Status</dt><dd><StatusBadge status={chamado.status} /></dd>
                 <dt>Categoria</dt><dd>{chamado.categoria?.nome || '—'}</dd>
                 <dt>Responsável</dt><dd>{chamado.atribuido_email ? nomeDeEmail(chamado.atribuido_email) : 'Aguardando atendimento'}</dd>
+                {previsaoColaborador(chamado) && <><dt>Previsão</dt><dd className={'previsao-col ' + previsaoColaborador(chamado).tipo}>{previsaoColaborador(chamado).texto.replace(/^Previsão de atendimento: /, '')}</dd></>}
                 <dt>Aberto em</dt><dd>{dataHora(chamado.criado_em)}</dd>
                 {ativo && <><dt>Equipamento</dt><dd>{ativo.dispositivo}</dd></>}
               </dl>

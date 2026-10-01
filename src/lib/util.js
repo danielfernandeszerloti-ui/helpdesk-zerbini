@@ -54,6 +54,7 @@ export function tempoRelativo(iso) {
 export function situacaoSla(c) {
   if (!c.prazo_sla) return 'sem'
   if (!emAndamento(c)) return 'ok'
+  if (c.status === 'em_espera') return 'pausado'
   const prazo = new Date(c.prazo_sla)
   if (prazo < new Date()) return 'atrasado'
   if (diaSP(prazo) === diaSP(new Date())) return 'hoje'
@@ -165,3 +166,15 @@ export function duracaoHoras(h) {
   if (h < 48) return `${Math.round(h)} h`
   return `${(h / 24).toFixed(1).replace('.', ',')} dias`
 }
+
+// Texto da previsão de atendimento para o colaborador (sem alarme quando vence)
+export function previsaoColaborador(c) {
+  if (!c.prazo_sla || !emAndamento(c) || c.etapa_id) return null
+  if (c.status === 'em_espera') return { tipo: 'pausado', texto: 'Prazo pausado — aguardando sua resposta' }
+  const quando = new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+    .format(new Date(c.prazo_sla)).replace(/,/g, '').replace(/ (\d{2}:\d{2})$/, ' às $1')
+  if (new Date(c.prazo_sla) < new Date()) return { tipo: 'vencido', texto: `Em atendimento — a previsão era ${quando}` }
+  return { tipo: 'ok', texto: `Previsão de atendimento: até ${quando}` }
+}
+
+export const EXPEDIENTE = 'seg a sex, das 8h às 17h45'

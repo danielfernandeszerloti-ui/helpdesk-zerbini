@@ -41,6 +41,32 @@ Atendentes são os e-mails da tabela `membros` com papel `admin` ou `editor` (a 
 insert into membros (email, papel) values ('nome.sobrenome@grupozerbini.com.br', 'editor');
 ```
 
+### 5. Notificações por e-mail
+O Supabase coloca os e-mails numa fila (`hd_notificacoes`) e, a cada minuto, chama `/api/notificar` (função da Vercel), que envia pelo SMTP da empresa. O envio sai pela Vercel porque as funções do Supabase não podem usar a porta 587.
+
+| Quando | Quem recebe |
+|---|---|
+| Chamado novo | toda a TI (admin/editor com e-mail @grupozerbini.com.br) |
+| Colaborador responde | o responsável pelo chamado (ou toda a TI, se não atribuído) |
+| TI responde (exceto nota interna) | o colaborador |
+| Chamado finalizado | o colaborador (junto com a última resposta, num e-mail só) |
+
+Na Vercel → **Settings → Environment Variables** (Production) cadastre e faça um **Redeploy**:
+
+| Nome | Valor |
+|---|---|
+| `SMTP_USER` | `helpdesk@grupozerbini.com.br` |
+| `SMTP_PASS` | senha dessa caixa |
+| `HD_SEGREDO` | segredo `hd_notif_segredo` do Vault do Supabase |
+| `SMTP_HOST` (opcional) | padrão `smtp.emailexchangeonline.com` |
+| `SMTP_PORT` (opcional) | padrão `587` |
+
+Acompanhar os envios (SQL Editor):
+```sql
+select id, tipo, destinatarios, status, tentativas, erro, criado_em from hd_notificacoes order by id desc limit 20;
+```
+Pausar tudo: `update hd_config set valor = 'nao' where chave = 'notificacoes_ativas';`
+
 ---
 
 ## Desenvolvimento local

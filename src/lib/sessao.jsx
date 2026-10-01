@@ -8,7 +8,8 @@ export function SessaoProvider({ children }) {
   const [sessao, setSessao] = useState(undefined) // undefined = carregando
   const [perfil, setPerfil] = useState(null)
   const [categorias, setCategorias] = useState([])
-  const [agentes, setAgentes] = useState([])
+  const [etapas, setEtapas] = useState([])
+  const [equipe, setEquipe] = useState([]) // [{email, papel, nome, ativo}]
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -22,6 +23,16 @@ export function SessaoProvider({ children }) {
     setCategorias(data || [])
   }, [])
 
+  const carregarEtapas = useCallback(async () => {
+    const { data } = await supabase.from('hd_etapas').select('*').order('ordem').order('id')
+    setEtapas(data || [])
+  }, [])
+
+  const carregarEquipe = useCallback(async () => {
+    const { data } = await supabase.rpc('hd_equipe_lista')
+    setEquipe(data || [])
+  }, [])
+
   const email = sessao?.user?.email
   useEffect(() => {
     if (!email) { setPerfil(null); return }
@@ -32,13 +43,11 @@ export function SessaoProvider({ children }) {
       if (error) { setPerfil({ erro: error.message }); return }
       setPerfil(data)
       carregarCategorias()
-      if (data.eh_agente) {
-        const m = await supabase.from('membros').select('email,papel').in('papel', ['admin', 'editor']).order('email')
-        if (ativo) setAgentes((m.data || []).map((x) => x.email.toLowerCase()))
-      }
+      carregarEtapas()
+      if (data.eh_agente || data.eh_dev) carregarEquipe()
     })()
     return () => { ativo = false }
-  }, [email, carregarCategorias])
+  }, [email, carregarCategorias, carregarEtapas, carregarEquipe])
 
   const avisar = useCallback((texto, tipo = 'ok') => {
     setToast({ texto, tipo, id: Date.now() })
@@ -47,8 +56,15 @@ export function SessaoProvider({ children }) {
 
   const sair = () => supabase.auth.signOut()
 
+  // e-mails de quem pode ser responsável: TI para qualquer chamado; dev só nos de Kanban
+  const responsaveis = (kanban) => equipe.filter((m) => m.ativo && (m.papel !== 'dev' || kanban)).map((m) => m.email)
+  const agentes = equipe.filter((m) => m.ativo).map((m) => m.email)
+
   return (
-    <Ctx.Provider value={{ sessao, perfil, categorias, carregarCategorias, agentes, avisar, sair }}>
+    <Ctx.Provider value={{
+      sessao, perfil, categorias, carregarCategorias, etapas, carregarEtapas,
+      equipe, carregarEquipe, agentes, responsaveis, avisar, sair,
+    }}>
       {children}
       {toast && <div className={`toast toast-${toast.tipo}`} role="status">{toast.texto}</div>}
     </Ctx.Provider>

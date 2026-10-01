@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import { enviarAnexos, mensagemErro, nomeDeEmail } from '../lib/util'
@@ -20,6 +20,14 @@ export default function NovoChamado() {
     solicitante_email: perfil.email, setor: perfil.setor || '', anydesk: perfil.anydesk || '', ativo_id: '',
   })
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
+
+  const [params] = useSearchParams()
+  useEffect(() => {
+    if (params.get('kanban') && !f.categoria_id) {
+      const k = categorias.find((c) => c.kanban && c.ativa)
+      if (k) setF((v) => ({ ...v, categoria_id: String(k.id) }))
+    }
+  }, [categorias]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     supabase.rpc('hd_meus_ativos').then(({ data }) => setMeusAtivos(data || []))

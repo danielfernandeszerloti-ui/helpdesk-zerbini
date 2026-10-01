@@ -144,3 +144,24 @@ export function mensagemErro(e) {
   if (/Failed to fetch|NetworkError/i.test(m)) return 'Sem conexão. Verifique a internet e tente de novo.'
   return m
 }
+
+// Cores das etapas do Kanban (nome salvo no banco -> classe CSS)
+export const CORES_ETAPA = ['cinza', 'azul', 'roxo', 'turquesa', 'amarelo', 'laranja', 'rosa', 'verde']
+
+export function previsaoAtrasada(c, etapaFinalId) {
+  if (!c.previsao_entrega || c.etapa_id === etapaFinalId || !emAndamento(c)) return false
+  return c.previsao_entrega < diaSP(new Date())
+}
+
+export function dataCurta(isoDia) {
+  if (!isoDia) return ''
+  const [a, m, d] = isoDia.split('-')
+  return `${d}/${m}/${a}`
+}
+
+export function duracaoHoras(h) {
+  if (h == null) return '—'
+  if (h < 1) return `${Math.round(h * 60)} min`
+  if (h < 48) return `${Math.round(h)} h`
+  return `${(h / 24).toFixed(1).replace('.', ',')} dias`
+}

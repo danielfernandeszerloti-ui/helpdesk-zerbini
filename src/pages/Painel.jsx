@@ -35,7 +35,7 @@ const COLUNAS = [
 const POR_PAGINA = 25
 
 export default function Painel() {
-  const { perfil, categorias, agentes } = useSessao()
+  const { perfil, categorias, responsaveis } = useSessao()
   const navegar = useNavigate()
   const [params, setParams] = useSearchParams()
   const [lista, setLista] = useState(null)
@@ -182,7 +182,7 @@ export default function Painel() {
             <option value="">Qualquer responsável</option>
             <option value="eu">Atribuídos a mim</option>
             <option value="ninguem">Não atribuídos</option>
-            {agentes.filter((a) => a !== perfil.email).map((a) => <option key={a} value={a}>{nomeDeEmail(a)}</option>)}
+            {responsaveis(true).filter((a) => a !== perfil.email).map((a) => <option key={a} value={a}>{nomeDeEmail(a)}</option>)}
           </select>
           <select value={filtro.prioridade} onChange={(e) => mudar({ prio: e.target.value })} aria-label="Prioridade">
             <option value="">Todas as prioridades</option>

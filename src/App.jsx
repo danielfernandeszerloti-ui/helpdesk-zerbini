@@ -6,7 +6,8 @@ import Painel from './pages/Painel'
 import MeusChamados from './pages/MeusChamados'
 import NovoChamado from './pages/NovoChamado'
 import Chamado from './pages/Chamado'
-import Categorias from './pages/Categorias'
+import Configuracoes from './pages/Configuracoes'
+import Kanban from './pages/Kanban'
 
 function Carregando() {
   return <div className="tela-cheia"><div className="spinner" aria-label="Carregando" /></div>
@@ -33,15 +34,18 @@ export default function App() {
   }
 
   const agente = perfil.eh_agente
+  const dev = perfil.eh_dev
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={agente ? <Navigate to="/painel" replace /> : <MeusChamados />} />
+        <Route index element={agente ? <Navigate to="/painel" replace /> : dev ? <Navigate to="/kanban" replace /> : <MeusChamados />} />
         <Route path="/meus" element={<MeusChamados />} />
         <Route path="/novo" element={<NovoChamado />} />
         <Route path="/chamado/:id" element={<Chamado />} />
         {agente && <Route path="/painel" element={<Painel />} />}
-        {agente && <Route path="/categorias" element={<Categorias />} />}
+        {(agente || dev) && <Route path="/kanban" element={<Kanban />} />}
+        {agente && <Route path="/configuracoes" element={<Configuracoes />} />}
+        {agente && <Route path="/categorias" element={<Navigate to="/configuracoes" replace />} />}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

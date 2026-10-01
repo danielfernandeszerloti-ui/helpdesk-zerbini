@@ -35,21 +35,31 @@ No painel do projeto `gestao-ativos-ti`:
    - Resend / Brevo (planos gratuitos), verificando o domínio.
 3. (Opcional) **Authentication → Emails → Magic Link**: incluir `{{ .Token }}` no modelo para o colaborador também poder digitar o código de 6 dígitos.
 
-### 4. Quem é da TI
-Atendentes são os e-mails da tabela `membros` com papel `admin` ou `editor` (a mesma da Gestão de Ativos). Para adicionar alguém da TI, cadastre na Gestão de Ativos ou:
-```sql
-insert into membros (email, papel) values ('nome.sobrenome@grupozerbini.com.br', 'editor');
-```
+### 4. Equipe do helpdesk
+A equipe fica em **Configurações → Equipe** (tabela `hd_equipe`), separada da Gestão de Ativos:
+
+| Perfil | Pode |
+|---|---|
+| Administrador | tudo, inclusive equipe e exclusão de chamados |
+| TI | atender todos os chamados, categorias e etapas |
+| Desenvolvedor | ver e atender **só** os chamados das categorias marcadas como Kanban |
+
+### Kanban de desenvolvimento
+- Categorias com **Kanban = Sim** (Configurações → Categorias) entram no quadro **Desenvolvimento**.
+- Etapas editáveis em Configurações → Etapas do Kanban. A etapa final ("Concluído") finaliza o chamado.
+- Cada cartão tem previsão de entrega (alerta de atraso), checklist e histórico de etapas; o quadro mostra o tempo médio em cada etapa (últimos 180 dias).
+- O solicitante vê o andamento no chamado e recebe e-mail a cada mudança de etapa.
 
 ### 5. Notificações por e-mail
 O Supabase coloca os e-mails numa fila (`hd_notificacoes`) e, a cada minuto, chama `/api/notificar` (função da Vercel), que envia pelo SMTP da empresa. O envio sai pela Vercel porque as funções do Supabase não podem usar a porta 587.
 
 | Quando | Quem recebe |
 |---|---|
-| Chamado novo | toda a TI (admin/editor com e-mail @grupozerbini.com.br) |
+| Chamado novo | toda a TI (e os devs, se a categoria for de Kanban) |
 | Colaborador responde | o responsável pelo chamado (ou toda a TI, se não atribuído) |
 | TI responde (exceto nota interna) | o colaborador |
 | Chamado finalizado | o colaborador (junto com a última resposta, num e-mail só) |
+| Projeto muda de etapa | o colaborador |
 
 Na Vercel → **Settings → Environment Variables** (Production) cadastre e faça um **Redeploy**:
 

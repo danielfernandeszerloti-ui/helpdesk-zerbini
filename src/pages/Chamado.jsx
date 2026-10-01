@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check } from 'lucide-react'
 import { supabase, BUCKET } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
   codigo, dataHora, tempoRelativo, nomeDeEmail, enviarAnexos, abrirAnexo, tamanhoLegivel, mensagemErro,
-  emAndamento, STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM,
+  emAndamento, STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, dataCurta, previsaoAtrasada,
 } from '../lib/util'
 import { Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
 
@@ -31,12 +31,102 @@ function ListaAnexos({ anexos, onErro }) {
   )
 }
 
+function Projeto({ chamado, etapas, tarefas, salvando, atualizar, recarregarTarefas, onErro }) {
+  const [novaTarefa, setNovaTarefa] = useState('')
+  const ativas = etapas.filter((e) => e.ativa || e.id === chamado.etapa_id)
+  const final = etapas.find((e) => e.finaliza)?.id
+  const feitas = tarefas.filter((t) => t.feita).length
+  const atrasado = previsaoAtrasada(chamado, final)
+
+  async function adicionar(e) {
+    e.preventDefault()
+    if (!novaTarefa.trim()) return
+    const { error } = await supabase.from('hd_tarefas').insert({ chamado_id: chamado.id, texto: novaTarefa.trim() })
+    if (error) return onErro(mensagemErro(error))
+    setNovaTarefa('')
+    recarregarTarefas()
+  }
+  async function alternar(t) {
+    const { error } = await supabase.from('hd_tarefas').update({ feita: !t.feita }).eq('id', t.id)
+    if (error) return onErro(mensagemErro(error))
+    recarregarTarefas()
+  }
+  async function remover(t) {
+    const { error } = await supabase.from('hd_tarefas').delete().eq('id', t.id)
+    if (error) return onErro(mensagemErro(error))
+    recarregarTarefas()
+  }
+
+  return (
+    <div className="cartao painel-lateral projeto">
+      <h3>Projeto</h3>
+      <label className="campo">
+        <span>Etapa</span>
+        <select value={chamado.etapa_id || ''} disabled={salvando}
+          onChange={(e) => {
+            const id = Number(e.target.value)
+            if (id === final && !window.confirm('Mover para "Concluído" finaliza o chamado e avisa o solicitante por e-mail. Continuar?')) return
+            atualizar({ etapa_id: id }, 'Etapa atualizada')
+          }}>
+          {ativas.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+        </select>
+      </label>
+      <label className="campo">
+        <span>Previsão de entrega</span>
+        <input type="date" defaultValue={chamado.previsao_entrega || ''} key={chamado.previsao_entrega || 'sem'} disabled={salvando}
+          onBlur={(e) => { const v = e.target.value || null; if (v !== (chamado.previsao_entrega || null)) atualizar({ previsao_entrega: v }, 'Previsão atualizada') }} />
+        {atrasado && <small className="dica erro-texto"><AlertTriangle size={13} /> Entrega atrasada</small>}
+      </label>
+      <div className="campo">
+        <span className="rotulo-linha"><ListChecks size={15} /> Checklist {tarefas.length > 0 && <small>{feitas}/{tarefas.length}</small>}</span>
+        {tarefas.length > 0 && <div className="kb-progresso grande"><div><span style={{ width: `${(feitas / tarefas.length) * 100}%` }} /></div></div>}
+        <ul className="checklist">
+          {tarefas.map((t) => (
+            <li key={t.id} className={t.feita ? 'feita' : ''}>
+              <button type="button" className="caixa" onClick={() => alternar(t)} aria-label={t.feita ? 'Desmarcar' : 'Marcar como feita'}>
+                {t.feita && <Check size={13} strokeWidth={3} />}
+              </button>
+              <span>{t.texto}</span>
+              <button type="button" className="btn-icone" onClick={() => remover(t)} aria-label="Remover tarefa"><X size={14} /></button>
+            </li>
+          ))}
+        </ul>
+        <form className="nova-tarefa" onSubmit={adicionar}>
+          <input value={novaTarefa} onChange={(e) => setNovaTarefa(e.target.value)} maxLength={300} placeholder="Nova tarefa…" />
+          <button className="btn btn-leve" disabled={!novaTarefa.trim()} aria-label="Adicionar tarefa"><Plus size={16} /></button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function Andamento({ chamado, etapas }) {
+  const ativas = etapas.filter((e) => e.ativa)
+  const idx = ativas.findIndex((e) => e.id === chamado.etapa_id)
+  return (
+    <div className="cartao painel-lateral">
+      <h3>Andamento do projeto</h3>
+      <ol className="stepper">
+        {ativas.map((e, i) => (
+          <li key={e.id} className={i < idx ? 'feito' : i === idx ? 'atual' : ''}>
+            <i>{i < idx ? <Check size={12} strokeWidth={3} /> : i + 1}</i>
+            <span>{e.nome}</span>
+          </li>
+        ))}
+      </ol>
+      {chamado.previsao_entrega && (
+        <p className="previsao"><CalendarClock size={15} /> Previsão de entrega: <b>{dataCurta(chamado.previsao_entrega)}</b></p>
+      )}
+    </div>
+  )
+}
+
 export default function Chamado() {
   const { id } = useParams()
   const chamadoId = Number(id)
-  const { perfil, categorias, agentes, avisar } = useSessao()
+  const { perfil, categorias, etapas, responsaveis, avisar } = useSessao()
   const navegar = useNavigate()
-  const agente = perfil.eh_agente
+  const daEquipe = perfil.eh_agente || perfil.eh_dev
 
   const [chamado, setChamado] = useState(undefined)
   const [mensagens, setMensagens] = useState([])
@@ -48,6 +138,7 @@ export default function Chamado() {
   const [arquivos, setArquivos] = useState([])
   const [enviando, setEnviando] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [tarefas, setTarefas] = useState([])
 
   const carregar = useCallback(async () => {
     const [c, m, a] = await Promise.all([
@@ -58,10 +149,10 @@ export default function Chamado() {
     setChamado(c.data || null)
     setMensagens(m.data || [])
     setAnexos(a.data || [])
-    if (c.data && ((agente && !c.data.lido_agente) || (c.data.solicitante_email === perfil.email && !c.data.lido_solicitante))) {
+    if (c.data && ((daEquipe && !c.data.lido_agente) || (c.data.solicitante_email === perfil.email && !c.data.lido_solicitante))) {
       supabase.rpc('hd_marcar_lido', { p_id: chamadoId }).then(() => {})
     }
-  }, [chamadoId, agente, perfil.email])
+  }, [chamadoId, daEquipe, perfil.email])
 
   useEffect(() => {
     if (!Number.isFinite(chamadoId)) { setChamado(null); return }
@@ -76,12 +167,23 @@ export default function Chamado() {
   }, [chamadoId, carregar])
 
   useEffect(() => {
-    if (agente) {
-      supabase.from('ativos').select('id,tipo,dispositivo,modelo,usuario').order('dispositivo').then(({ data }) => setAtivos(data || []))
-    } else {
-      supabase.rpc('hd_meus_ativos').then(({ data }) => setAtivos(data || []))
-    }
-  }, [agente])
+    supabase.rpc(daEquipe ? 'hd_ativos_lista' : 'hd_meus_ativos').then(({ data }) => setAtivos(data || []))
+  }, [daEquipe])
+
+  const ehProjeto = !!chamado?.etapa_id
+  const atende = !!chamado && (perfil.eh_agente || (perfil.eh_dev && ehProjeto))
+  const carregarTarefas = useCallback(async () => {
+    const { data } = await supabase.from('hd_tarefas').select('*').eq('chamado_id', chamadoId).order('ordem').order('id')
+    setTarefas(data || [])
+  }, [chamadoId])
+  useEffect(() => {
+    if (!atende || !ehProjeto) return
+    carregarTarefas()
+    const canal = supabase.channel('tarefas-' + chamadoId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'hd_tarefas', filter: `chamado_id=eq.${chamadoId}` }, carregarTarefas)
+      .subscribe()
+    return () => { supabase.removeChannel(canal) }
+  }, [atende, ehProjeto, chamadoId, carregarTarefas])
 
   const anexosPorMensagem = useMemo(() => {
     const mapa = {}
@@ -102,6 +204,7 @@ export default function Chamado() {
     )
   }
 
+  const agente = atende
   const souSolicitante = chamado.solicitante_email === perfil.email
   const nomeSolicitante = chamado.solicitante_nome || nomeDeEmail(chamado.solicitante_email)
   const ativo = ativos.find((a) => a.id === chamado.ativo_id)
@@ -167,7 +270,7 @@ export default function Chamado() {
           <button className="btn-icone" onClick={() => navegar(-1)} aria-label="Voltar"><ArrowLeft size={20} /></button>
           <div>
             <div className="migalha">
-              <Link to={agente ? '/painel' : '/meus'}>Chamados</Link> › {codigo(chamado.id)}
+              <Link to={perfil.eh_agente ? '/painel' : perfil.eh_dev && ehProjeto ? '/kanban' : '/meus'}>{perfil.eh_dev && ehProjeto ? 'Desenvolvimento' : 'Chamados'}</Link> › {codigo(chamado.id)}
             </div>
             <h1>{chamado.titulo}</h1>
           </div>
@@ -222,7 +325,7 @@ export default function Chamado() {
           {podeResponder && (
             <form className={'cartao resposta' + (interna ? ' interna' : '')} onSubmit={responder}>
               <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)}
-                placeholder={interna ? 'Nota interna — só a equipe de TI vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI…'}
+                placeholder={interna ? 'Nota interna — só a equipe vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI…'}
                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) responder(e) }} />
               <div className="resposta-rodape">
                 <SeletorArquivos compacto arquivos={arquivos} setArquivos={setArquivos} onErro={erro} />
@@ -248,6 +351,11 @@ export default function Chamado() {
         </section>
 
         <aside className="lateral">
+          {agente && ehProjeto && (
+            <Projeto chamado={chamado} etapas={etapas} tarefas={tarefas} salvando={salvando}
+              atualizar={atualizar} recarregarTarefas={carregarTarefas} onErro={erro} />
+          )}
+          {!agente && ehProjeto && <Andamento chamado={chamado} etapas={etapas} />}
           {agente ? (
             <div className="cartao painel-lateral">
               <h3>Atendimento</h3>
@@ -268,7 +376,7 @@ export default function Chamado() {
                 <select value={chamado.atribuido_email || ''} disabled={salvando}
                   onChange={(e) => atualizar({ atribuido_email: e.target.value || null }, 'Responsável atualizado')}>
                   <option value="">Não atribuído</option>
-                  {[...new Set([...agentes, chamado.atribuido_email].filter(Boolean))].map((a) => <option key={a} value={a}>{nomeDeEmail(a)}</option>)}
+                  {[...new Set([...responsaveis(ehProjeto), chamado.atribuido_email].filter(Boolean))].map((a) => <option key={a} value={a}>{nomeDeEmail(a)}</option>)}
                 </select>
               </label>
               {chamado.atribuido_email !== perfil.email && emAndamento(chamado) && (
@@ -277,14 +385,14 @@ export default function Chamado() {
                   <UserCheck size={16} /> Assumir chamado
                 </button>
               )}
-              <label className="campo">
+              {perfil.eh_agente && <label className="campo">
                 <span>Categoria</span>
                 <select value={chamado.categoria_id || ''} disabled={salvando}
                   onChange={(e) => atualizar({ categoria_id: e.target.value ? Number(e.target.value) : null }, 'Categoria atualizada')}>
                   <option value="">Sem categoria</option>
                   {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
-              </label>
+              </label>}
               <label className="campo">
                 <span>Prazo de SLA</span>
                 <input type="datetime-local" defaultValue={paraInputLocal(chamado.prazo_sla)} key={chamado.prazo_sla || 'vazio'} disabled={salvando}

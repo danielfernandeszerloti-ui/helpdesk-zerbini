@@ -1,0 +1,49 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { useSessao } from './lib/sessao'
+import Layout from './components/Layout'
+import Login from './pages/Login'
+import Painel from './pages/Painel'
+import MeusChamados from './pages/MeusChamados'
+import NovoChamado from './pages/NovoChamado'
+import Chamado from './pages/Chamado'
+import Categorias from './pages/Categorias'
+
+function Carregando() {
+  return <div className="tela-cheia"><div className="spinner" aria-label="Carregando" /></div>
+}
+
+export default function App() {
+  const { sessao, perfil, sair } = useSessao()
+
+  if (sessao === undefined) return <Carregando />
+  if (!sessao) return <Login />
+  if (!perfil) return <Carregando />
+
+  if (perfil.erro || !perfil.pode_abrir) {
+    return (
+      <div className="tela-cheia">
+        <div className="cartao cartao-aviso">
+          <h2>Acesso restrito</h2>
+          <p>O Zerbini Helpdesk é exclusivo para e-mails <b>@grupozerbini.com.br</b>.</p>
+          <p className="texto-suave">Você entrou como {sessao.user.email}.</p>
+          <button className="btn btn-primario" onClick={sair}>Entrar com outro e-mail</button>
+        </div>
+      </div>
+    )
+  }
+
+  const agente = perfil.eh_agente
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={agente ? <Navigate to="/painel" replace /> : <MeusChamados />} />
+        <Route path="/meus" element={<MeusChamados />} />
+        <Route path="/novo" element={<NovoChamado />} />
+        <Route path="/chamado/:id" element={<Chamado />} />
+        {agente && <Route path="/painel" element={<Painel />} />}
+        {agente && <Route path="/categorias" element={<Categorias />} />}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  )
+}

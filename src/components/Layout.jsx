@@ -12,9 +12,7 @@ export default function Layout() {
       <header className="topo">
         <div className="topo-interno">
           <NavLink to="/" className="marca">
-            <span className="marca-icone" aria-hidden>
-              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 7h14M5 12h14M5 17h9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" fill="none" /></svg>
-            </span>
+            <img src="/logo-z-azul.png" alt="" className="marca-logo" />
             <span>
               <strong>Zerbini Helpdesk</strong>
               <small>Grupo Zerbini</small>
@@ -23,7 +21,7 @@ export default function Layout() {
           <div className="usuario">
             <Avatar nome={nome} />
             <span className="usuario-nome">{nome}</span>
-            <button className="btn-icone claro" onClick={sair} title="Sair" aria-label="Sair"><LogOut size={18} /></button>
+            <button className="btn-icone" onClick={sair} title="Sair" aria-label="Sair"><LogOut size={18} /></button>
           </div>
         </div>
       </header>

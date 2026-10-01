@@ -3,7 +3,7 @@ import { supabase, BUCKET } from './supabase'
 export const TZ = 'America/Sao_Paulo'
 
 export const STATUS = {
-  novo: { rotulo: 'Novo', cor: 'azul' },
+  novo: { rotulo: 'Novo', cor: 'turquesa' },
   aberto: { rotulo: 'Aberto', cor: 'roxo' },
   em_espera: { rotulo: 'Em espera', cor: 'amarelo' },
   pausado: { rotulo: 'Pausado', cor: 'cinza' },

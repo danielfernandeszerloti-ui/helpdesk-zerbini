@@ -608,3 +608,8 @@ html[data-tema="escuro"] .tile.destaque .tile-valor, html[data-tema="escuro"] .t
 .login-tema { position: absolute; top: 16px; right: 16px; }
 .config-linha > div { flex: 1 1 320px; }
 html[data-tema="escuro"] .cor-roxo { --etapa: #5f73f0; }
+.btn-ajuda { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--linha); color: var(--texto-2); font-size: 13px; font-weight: 500; }
+.btn-ajuda:hover { border-color: var(--turquesa); background: var(--turquesa-claro); text-decoration: none; color: var(--texto); }
+.login-ajuda { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 500; }
+html[data-tema="escuro"] .login-ajuda { color: #9aa7ff; }
+@media (max-width: 720px) { .btn-ajuda span { display: none; } .btn-ajuda { padding: 6px; border: 0; } }

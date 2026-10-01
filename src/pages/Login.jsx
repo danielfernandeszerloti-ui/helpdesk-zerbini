@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Mail, ArrowLeft, Moon, Sun } from 'lucide-react'
+import { Mail, ArrowLeft, Moon, Sun, CircleHelp } from 'lucide-react'
 import { useTema } from '../lib/tema'
 import { supabase } from '../lib/supabase'
 import { mensagemErro } from '../lib/util'
@@ -102,6 +102,9 @@ export default function Login() {
             </div>
           </form>
         )}
+        <a href="/passo-a-passo.pdf" target="_blank" rel="noopener" className="login-ajuda">
+          <CircleHelp size={16} /> Primeira vez? Veja o passo a passo
+        </a>
       </div>
     </div>
   )

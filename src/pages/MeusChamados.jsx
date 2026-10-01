@@ -34,7 +34,7 @@ export default function MeusChamados() {
       <div className="cabecalho-pagina">
         <div>
           <h1>Olá, {primeiroNome}</h1>
-          <p className="texto-suave">Acompanhe aqui os seus chamados com a TI.</p>
+          <p className="texto-suave">Acompanhe aqui os seus chamados com a TI. <a href="/passo-a-passo.pdf" target="_blank" rel="noopener">Ver o passo a passo</a></p>
         </div>
         <Link to="/novo" className="btn btn-primario"><Plus size={17} /> Novo chamado</Link>
       </div>

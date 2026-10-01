@@ -44,17 +44,21 @@ export default function Login() {
   return (
     <div className="login">
       <div className="login-lado">
+        <img src="/parede-tech.svg" alt="" className="login-arte" />
+        <div className="login-legenda">
+          <span className="login-selo">TI · Grupo Zerbini</span>
+          <p className="login-frase">Abra um chamado para a TI em menos de um minuto e acompanhe cada resposta por aqui.</p>
+        </div>
+      </div>
+
+      <div className="login-form">
         <div className="login-marca">
-          <span className="login-logo"><img src="/logo-z-azul.png" alt="Grupo Zerbini" /></span>
+          <img src="/logo-z-azul.png" alt="Grupo Zerbini" />
           <div>
             <h1>Zerbini Helpdesk</h1>
             <p>Chamados internos do Grupo Zerbini</p>
           </div>
         </div>
-        <p className="login-frase">Abra um chamado para a TI em menos de um minuto e acompanhe cada resposta por aqui.</p>
-      </div>
-
-      <div className="login-form">
         {etapa === 'email' ? (
           <form onSubmit={enviar} className="cartao">
             <h2>Entrar</h2>

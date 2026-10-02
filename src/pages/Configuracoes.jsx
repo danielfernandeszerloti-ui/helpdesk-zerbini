@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Plus, Save, Tags, Layers, Users } from 'lucide-react'
+import { Plus, Save, Tags, Layers, Users, Mail, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import { mensagemErro, CORES_ETAPA, nomeDeEmail } from '../lib/util'
+import { Link } from 'react-router-dom'
+import { mensagemErro, CORES_ETAPA, nomeDeEmail, codigo, dataHora, tempoRelativo } from '../lib/util'
 
 const PAPEIS = {
   admin: { rotulo: 'Administrador', desc: 'TI com acesso total, inclusive equipe e exclusão' },
@@ -265,10 +266,110 @@ function Equipe() {
   )
 }
 
+// ---------- E-mail (caixa helpdesk@) ----------
+const ACOES_EMAIL = {
+  novo: { rotulo: 'Novo chamado', classe: 'ok' },
+  resposta: { rotulo: 'Resposta', classe: 'ok' },
+  nota: { rotulo: 'Nota interna', classe: 'info' },
+  ignorado: { rotulo: 'Ignorado', classe: 'neutro' },
+  erro: { rotulo: 'Erro', classe: 'erro' },
+}
+
+function EmailEntrada() {
+  const { perfil, categorias, avisar } = useSessao()
+  const [d, setD] = useState(null)
+  const [carregando, setCarregando] = useState(false)
+  const admin = perfil.papel === 'admin'
+
+  async function carregar() {
+    setCarregando(true)
+    const { data, error } = await supabase.rpc('hd_email_entrada_painel')
+    setCarregando(false)
+    if (error) return avisar(mensagemErro(error), 'erro')
+    setD(data)
+  }
+  useEffect(() => { carregar() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function salvar(chave, valor, msg) {
+    const { error } = await supabase.from('hd_config').upsert({ chave, valor })
+    if (error) return avisar(mensagemErro(error), 'erro')
+    avisar(msg)
+    carregar()
+  }
+
+  if (!d) return <div className="cartao carregando-bloco"><div className="spinner" /></div>
+  const u = d.ultima
+  const okLeitura = u && u.status >= 200 && u.status < 300
+  let detalheErro = ''
+  if (u && !okLeitura) { try { detalheErro = JSON.parse(u.resposta).erro } catch { detalheErro = u.resposta || 'sem resposta' } }
+
+  return (
+    <>
+      <p className="texto-suave">
+        E-mails enviados para a caixa do helpdesk viram chamados sozinhos. Respostas com "Chamado #0000" no assunto entram no chamado.
+        Pedidos que você <b>encaminhar</b> (ENC:) ficam em nome de quem enviou o e-mail original.
+      </p>
+      <div className="cartao config-linha">
+        <div>
+          <strong>Ler a caixa automaticamente</strong>
+          <small className="sub">A cada 2 min das 7h às 20h (seg a sáb) e a cada 10 min no resto do tempo.</small>
+        </div>
+        <label className="interruptor">
+          <input type="checkbox" checked={d.ativa} disabled={!admin}
+            onChange={(e) => salvar('email_entrada_ativa', e.target.checked ? 'sim' : 'nao', e.target.checked ? 'Leitura da caixa ligada' : 'Leitura da caixa pausada')} />
+          <span>{d.ativa ? 'Ligada' : 'Pausada'}</span>
+        </label>
+      </div>
+      <div className="cartao config-linha">
+        <div>
+          <strong>Categoria dos chamados por e-mail</strong>
+          <small className="sub">Define o SLA. Deixe "Sem categoria" para classificar cada um ao atender.</small>
+        </div>
+        <select value={d.categoria || ''} disabled={!admin} aria-label="Categoria dos chamados por e-mail"
+          onChange={(e) => salvar('categoria_email', e.target.value, 'Categoria salva')}>
+          <option value="">Sem categoria</option>
+          {categorias.filter((c) => c.ativa && !c.kanban).map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+        </select>
+      </div>
+      <div className={'cartao config-linha ' + (u ? (okLeitura ? 'status-ok' : 'status-erro') : '')}>
+        <div>
+          <strong>Última leitura</strong>
+          <small className="sub">
+            {!u ? 'Ainda não houve leitura — confira as variáveis na Vercel.' : okLeitura ? `Funcionando · ${tempoRelativo(u.quando)}` : `Falhou ${tempoRelativo(u.quando)}: ${detalheErro}`}
+          </small>
+        </div>
+        <button className="btn btn-leve" onClick={carregar} disabled={carregando}><RefreshCw size={15} className={carregando ? 'girando' : ''} /> Atualizar</button>
+      </div>
+      <div className="cartao tabela-cartao">
+        <div className="tabela-rolagem">
+          <table className="tabela">
+            <thead><tr><th>Recebido</th><th>De</th><th>Assunto</th><th>Resultado</th></tr></thead>
+            <tbody>
+              {d.recentes.length === 0 && <tr><td colSpan={4} className="texto-suave centro">Nenhum e-mail recebido ainda.</td></tr>}
+              {d.recentes.map((r) => (
+                <tr key={r.id}>
+                  <td title={dataHora(r.recebido_em)}>{tempoRelativo(r.recebido_em)}</td>
+                  <td>{r.remetente || '—'}</td>
+                  <td>{r.assunto || '(sem assunto)'}{r.detalhe && <small className="sub">{r.detalhe}</small>}</td>
+                  <td>
+                    <span className={'selo-acao ' + (ACOES_EMAIL[r.acao]?.classe || '')}>{ACOES_EMAIL[r.acao]?.rotulo || r.acao}</span>
+                    {r.chamado_id && <> <Link to={`/chamado/${r.chamado_id}`}>{codigo(r.chamado_id)}</Link></>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>
+  )
+}
+
 const ABAS = [
   { id: 'categorias', rotulo: 'Categorias', icone: Tags, comp: Categorias },
   { id: 'etapas', rotulo: 'Etapas do Kanban', icone: Layers, comp: Etapas },
   { id: 'equipe', rotulo: 'Equipe', icone: Users, comp: Equipe },
+  { id: 'email', rotulo: 'E-mail', icone: Mail, comp: EmailEntrada },
 ]
 
 export default function Configuracoes() {

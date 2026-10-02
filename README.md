@@ -116,6 +116,23 @@ As migrações estão em `supabase/migrations/` (já aplicadas no projeto):
 - **Avisar por e-mail** (no cartão Solicitante) liga/desliga os avisos para aquele chamado.
 - O Painel exporta a coluna *Origem* no Excel.
 
+### Caixa helpdesk@ → chamados automáticos
+A função `/api/receber-emails` (Vercel) lê a caixa por IMAP, chamada pelo Supabase a cada 2 min das 7h às 20h (seg–sáb) e a cada 10 min no resto do tempo.
+- E-mail novo → chamado em nome de quem enviou (origem *E-mail*), com anexos, e confirmação "Recebemos sua solicitação #0000".
+- Resposta com "Chamado #0000" no assunto → entra no chamado (o histórico citado é removido). Se quem respondeu não é o solicitante nem da equipe, vira nota interna.
+- Encaminhado (ENC:/FW:) por alguém da equipe → chamado em nome do remetente original.
+- Respostas automáticas (férias), erros de entrega e newsletters são ignorados. Chamado cancelado recebe um chamado novo.
+- **Configurações → E-mail**: liga/pausa a leitura, categoria padrão (SLA) e histórico dos e-mails recebidos com o resultado de cada um.
+
+Variáveis na Vercel (além das de notificação):
+
+| Nome | Valor |
+|---|---|
+| `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API Keys → *Secret key* (só para importar anexos) |
+| `IMAP_HOST` (opcional) | padrão `imap.emailexchangeonline.com` |
+| `IMAP_PORT` (opcional) | padrão: tenta `993` e depois `143` |
+| `IMAP_USER` / `IMAP_PASS` (opcional) | padrão: os mesmos `SMTP_USER` / `SMTP_PASS` |
+
 ### Atendimento e aparência
 - **Configurações → Equipe → Atende chamados**: define quem aparece em "Atribuído a" e recebe e-mail de chamado novo. Quem não atende (ex.: gestores) continua vendo tudo.
 - **Atribuir novos chamados automaticamente a**: responsável padrão dos chamados novos fora do Kanban (`hd_config.responsavel_padrao`).

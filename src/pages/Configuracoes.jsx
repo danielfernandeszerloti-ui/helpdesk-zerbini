@@ -9,6 +9,7 @@ const PAPEIS = {
   admin: { rotulo: 'Administrador', desc: 'TI com acesso total, inclusive equipe e exclusão' },
   ti: { rotulo: 'TI', desc: 'Atende todos os chamados' },
   dev: { rotulo: 'Desenvolvedor', desc: 'Vê e atende só o Kanban de desenvolvimento' },
+  gestor: { rotulo: 'Gestor', desc: 'Vê o Kanban e aprova ou recusa projetos' },
 }
 
 // ---------- Categorias ----------
@@ -115,6 +116,7 @@ function LinhaEtapa({ etapa, onSalvo }) {
             <span>{f.ativa ? 'Ativa' : 'Inativa'}</span>
           </label>
         )}
+        {etapa.aprovacao && <small className="sub">Aprovação da gerência — desative para os projetos irem direto ao Backlog</small>}
       </td>
       <td>{mudou && <button className="btn btn-primario btn-p" onClick={() => salvar()}><Save size={14} /> Salvar</button>}</td>
     </tr>
@@ -184,7 +186,7 @@ function Equipe() {
     e.preventDefault()
     const email = novo.email.trim().toLowerCase()
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return avisar('Digite um e-mail válido', 'erro')
-    const { error } = await supabase.from('hd_equipe').upsert({ email, papel: novo.papel, ativo: true })
+    const { error } = await supabase.from('hd_equipe').upsert({ email, papel: novo.papel, ativo: true, ...(novo.papel === 'gestor' ? { atende: false, aprova: true } : {}) })
     if (error) return avisar(mensagemErro(error), 'erro')
     setNovo({ email: '', papel: novo.papel })
     avisar(`${nomeDeEmail(email)} adicionado à equipe`)
@@ -226,7 +228,7 @@ function Equipe() {
       <div className="cartao tabela-cartao">
         <div className="tabela-rolagem">
           <table className="tabela tabela-edicao">
-            <thead><tr><th>Pessoa</th><th>Perfil</th><th>Atende chamados</th><th>Situação</th></tr></thead>
+            <thead><tr><th>Pessoa</th><th>Perfil</th><th>Atende chamados</th><th>Aprova projetos</th><th>Situação</th></tr></thead>
             <tbody>
               {equipe.map((m) => (
                 <tr key={m.email} className={m.ativo ? '' : 'inativa'}>
@@ -247,6 +249,15 @@ function Equipe() {
                       </label>
                     ) : (m.atende ? 'Sim' : 'Não')}
                     <small className="sub">{m.atende ? 'aparece em "Atribuído a"' : 'só acompanha'}</small>
+                  </td>
+                  <td>
+                    {m.papel === 'gestor' ? 'Sim' : admin ? (
+                      <label className="interruptor" title="Recebe por e-mail os projetos novos e pode aprovar ou recusar">
+                        <input type="checkbox" checked={!!m.aprova} onChange={(e) => alterar(m.email, { aprova: e.target.checked }, e.target.checked ? 'Passa a aprovar projetos' : 'Não aprova mais projetos')} />
+                        <span>{m.aprova ? 'Sim' : 'Não'}</span>
+                      </label>
+                    ) : (m.aprova ? 'Sim' : 'Não')}
+                    <small className="sub">{m.aprova || m.papel === 'gestor' ? 'recebe projetos para aprovar' : m.papel === 'admin' ? 'pode aprovar, sem aviso' : '—'}</small>
                   </td>
                   <td>
                     {admin ? (

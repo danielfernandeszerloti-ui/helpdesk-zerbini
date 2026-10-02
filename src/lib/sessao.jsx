@@ -29,7 +29,7 @@ export function SessaoProvider({ children }) {
   }, [])
 
   const carregarEquipe = useCallback(async () => {
-    const { data } = await supabase.rpc('hd_equipe_detalhe')
+    const { data } = await supabase.rpc('hd_equipe_detalhe_v2')
     setEquipe(data || [])
   }, [])
 
@@ -57,7 +57,7 @@ export function SessaoProvider({ children }) {
   const sair = () => supabase.auth.signOut()
 
   // e-mails de quem pode ser responsável: TI para qualquer chamado; dev só nos de Kanban
-  const responsaveis = (kanban) => equipe.filter((m) => m.ativo && m.atende && (m.papel !== 'dev' || kanban)).map((m) => m.email)
+  const responsaveis = (kanban) => equipe.filter((m) => m.ativo && m.atende && m.papel !== 'gestor' && (m.papel !== 'dev' || kanban)).map((m) => m.email)
   const agentes = equipe.filter((m) => m.ativo).map((m) => m.email)
 
   return (

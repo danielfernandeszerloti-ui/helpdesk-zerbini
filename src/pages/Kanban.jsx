@@ -4,7 +4,7 @@ import {
   DndContext, DragOverlay, KeyboardSensor, PointerSensor, TouchSensor,
   useDraggable, useDroppable, useSensor, useSensors, closestCorners,
 } from '@dnd-kit/core'
-import { Plus, Search, CalendarClock, ListChecks, Clock, AlertTriangle, RefreshCw, X } from 'lucide-react'
+import { Plus, Search, CalendarClock, ListChecks, Clock, AlertTriangle, RefreshCw, X, Hourglass } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
@@ -70,13 +70,14 @@ function Coluna({ etapa, itens, metrica, children, ocultos, onMostrar }) {
           <strong>{etapa.nome}</strong>
           <span className="contagem">{itens.length}</span>
         </div>
+        {etapa.aprovacao && <small className="kb-aprov-dica"><Hourglass size={12} /> Gerência aprova ou recusa</small>}
         <small className="kb-media" title="Tempo médio que os projetos ficam nesta etapa (últimos 180 dias)">
           <Clock size={12} /> {metrica ? `média ${duracaoHoras(Number(metrica.media_horas))}` : 'sem histórico'}
         </small>
       </header>
       <div ref={setNodeRef} className="kb-lista">
         {children}
-        {itens.length === 0 && <div className="kb-vazio">Arraste um cartão para cá</div>}
+        {itens.length === 0 && <div className="kb-vazio">{etapa.aprovacao ? 'Nada aguardando aprovação' : 'Arraste um cartão para cá'}</div>}
         {ocultos > 0 && <button className="btn-link kb-mais" onClick={onMostrar}>Mostrar {ocultos} concluídos antigos</button>}
       </div>
     </section>
@@ -98,6 +99,7 @@ export default function Kanban() {
 
   const ativas = useMemo(() => etapas.filter((e) => e.ativa), [etapas])
   const etapaFinal = useMemo(() => etapas.find((e) => e.finaliza)?.id, [etapas])
+  const etapaAprov = useMemo(() => etapas.find((e) => e.aprovacao && e.ativa)?.id, [etapas])
 
   const carregar = useCallback(async () => {
     if (arrastandoRef.current) return
@@ -165,12 +167,13 @@ export default function Kanban() {
   const resumo = useMemo(() => {
     const abertos = (chamados || []).filter((c) => c.etapa_id !== etapaFinal)
     return {
+      aprovacao: abertos.filter((c) => c.etapa_id === etapaAprov).length,
       andamento: abertos.length,
       atrasados: abertos.filter((c) => previsaoAtrasada(c, etapaFinal)).length,
       semResp: abertos.filter((c) => !c.atribuido_email).length,
       meus: abertos.filter((c) => c.atribuido_email === perfil.email).length,
     }
-  }, [chamados, etapaFinal, perfil.email])
+  }, [chamados, etapaFinal, etapaAprov, perfil.email])
 
   const sensores = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -202,6 +205,11 @@ export default function Kanban() {
       novaOrdem = coluna.length ? Math.max(...coluna.map((c) => c.kanban_ordem)) + 1 : Date.now() / 1000
     }
     if (etapaDestino === atual.etapa_id && novaOrdem === atual.kanban_ordem) return
+    if (etapaDestino !== atual.etapa_id && (atual.etapa_id === etapaAprov || etapaDestino === etapaAprov) && !perfil.pode_aprovar) {
+      avisar('Só a gerência aprova projetos. Abra o cartão para ver a situação.', 'erro'); return
+    }
+    if (atual.etapa_id === etapaAprov && etapaDestino !== etapaAprov && etapaDestino !== etapaFinal &&
+        !window.confirm(`Aprovar ${codigo(id)}? O dev e ${atual.solicitante_nome || 'o solicitante'} serão avisados por e-mail.`)) return
     if (etapaDestino === etapaFinal && atual.etapa_id !== etapaFinal &&
         !window.confirm(`Mover ${codigo(id)} para "Concluído" finaliza o chamado e avisa ${atual.solicitante_nome || 'o solicitante'} por e-mail. Continuar?`)) return
 
@@ -213,7 +221,7 @@ export default function Kanban() {
     if (error) { setChamados(anterior); avisar(mensagemErro(error), 'erro'); return }
     if (campos.etapa_id) {
       const nome = etapas.find((e) => e.id === etapaDestino)?.nome
-      avisar(`${codigo(id)} movido para ${nome}`)
+      avisar(atual.etapa_id === etapaAprov ? `${codigo(id)} aprovado e enviado para ${nome}` : `${codigo(id)} movido para ${nome}`)
     }
     carregar()
   }
@@ -226,7 +234,7 @@ export default function Kanban() {
       <div className="cabecalho-pagina">
         <div>
           <h1>Desenvolvimento</h1>
-          <p className="texto-suave">Arraste os cartões para atualizar a etapa. O solicitante é avisado por e-mail.</p>
+          <p className="texto-suave">Projetos novos passam pela aprovação da gerência antes do Backlog. Arraste os cartões para atualizar a etapa — o solicitante é avisado por e-mail.</p>
         </div>
         <div className="acoes">
           <button className="btn btn-leve" onClick={carregar} aria-label="Atualizar" title="Atualizar">
@@ -240,6 +248,11 @@ export default function Kanban() {
         <button onClick={() => { setResp(''); setPrio(''); setBusca('') }}>
           <strong>{resumo.andamento}</strong><span>em andamento</span>
         </button>
+        {etapaAprov && (
+          <div className={resumo.aprovacao && perfil.pode_aprovar ? 'destaque' : ''}>
+            <strong>{resumo.aprovacao}</strong><span>aguardando aprovação</span>
+          </div>
+        )}
         <button onClick={() => setResp(resp === 'eu' ? '' : 'eu')} className={resp === 'eu' ? 'ativo' : ''}>
           <strong>{resumo.meus}</strong><span>comigo</span>
         </button>

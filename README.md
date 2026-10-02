@@ -43,9 +43,13 @@ A equipe fica em **Configurações → Equipe** (tabela `hd_equipe`), separada d
 | Administrador | tudo, inclusive equipe e exclusão de chamados |
 | TI | atender todos os chamados, categorias e etapas |
 | Desenvolvedor | ver e atender **só** os chamados das categorias marcadas como Kanban |
+| Gestor | ver o Kanban e **aprovar ou recusar** projetos |
+
+Em **Equipe → Aprova projetos**, um administrador também pode receber os projetos para aprovar (hoje: Amanda).
 
 ### Kanban de desenvolvimento
 - Categorias com **Kanban = Sim** (Configurações → Categorias) entram no quadro **Desenvolvimento**.
+- Todo projeto novo entra em **Aguardando aprovação**. Quem aprova recebe e-mail, abre o chamado e clica em **Aprovar** (vai para o Backlog e o dev é avisado) ou **Recusar** (com motivo, que vai para o solicitante). Dev e TI não conseguem tirar o projeto dessa etapa. Para desligar o fluxo, desative a etapa em Configurações → Etapas do Kanban.
 - Etapas editáveis em Configurações → Etapas do Kanban. A etapa final ("Concluído") finaliza o chamado.
 - Cada cartão tem previsão de entrega (alerta de atraso), checklist e histórico de etapas; o quadro mostra o tempo médio em cada etapa (últimos 180 dias).
 - O solicitante vê o andamento no chamado e recebe e-mail a cada mudança de etapa.

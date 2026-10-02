@@ -630,3 +630,19 @@ html[data-tema="escuro"] .login-ajuda { color: #9aa7ff; }
 html[data-tema="escuro"] .selo-acao.erro { color: var(--rosa); }
 .tabela th:not(:has(button)) { padding: 12px 14px; }
 .config-conteudo .tabela td:first-child { white-space: nowrap; }
+
+/* Aprovação de projetos */
+.btn-sucesso { background: #0e9a95; color: #fff; }
+.btn-sucesso:hover:not(:disabled) { background: #0b827e; }
+.aprovacao { display: grid; gap: 14px; padding: 16px 18px; border-left: 4px solid #e0a100; background: color-mix(in srgb, #f5b800 9%, var(--sup)); }
+.aprovacao.aguardando { display: flex; align-items: flex-start; gap: 12px; }
+.aprovacao-topo { display: flex; align-items: flex-start; gap: 12px; }
+.aprovacao svg { color: #b07d00; flex: none; margin-top: 2px; }
+.aprovacao strong { display: block; }
+.aprovacao small { color: var(--texto-2); }
+.aprovacao-botoes { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.aprovacao-recusa { display: grid; gap: 10px; }
+.aprovacao-recusa textarea { width: 100%; }
+html[data-tema="escuro"] .aprovacao svg { color: #f5c542; }
+.kb-aprov-dica { display: flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--texto-3); margin-top: 2px; }
+.kb-resumo .destaque { border-color: #e0a100; background: color-mix(in srgb, #f5b800 14%, var(--sup)); }

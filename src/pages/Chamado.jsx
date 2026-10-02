@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check } from 'lucide-react'
+import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check, ThumbsUp, ThumbsDown, Hourglass } from 'lucide-react'
 import { supabase, BUCKET } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
@@ -34,7 +34,7 @@ function ListaAnexos({ anexos, onErro }) {
   )
 }
 
-function Projeto({ chamado, etapas, tarefas, salvando, atualizar, recarregarTarefas, onErro }) {
+function Projeto({ chamado, etapas, tarefas, salvando, atualizar, recarregarTarefas, onErro, travado }) {
   const [novaTarefa, setNovaTarefa] = useState('')
   const ativas = etapas.filter((e) => e.ativa || e.id === chamado.etapa_id)
   const final = etapas.find((e) => e.finaliza)?.id
@@ -65,7 +65,7 @@ function Projeto({ chamado, etapas, tarefas, salvando, atualizar, recarregarTare
       <h3>Projeto</h3>
       <label className="campo">
         <span>Etapa</span>
-        <select value={chamado.etapa_id || ''} disabled={salvando}
+        <select value={chamado.etapa_id || ''} disabled={salvando || travado} title={travado ? 'Aguardando aprovação da gerência' : undefined}
           onChange={(e) => {
             const id = Number(e.target.value)
             if (id === final && !window.confirm('Mover para "Concluído" finaliza o chamado e avisa o solicitante por e-mail. Continuar?')) return
@@ -103,6 +103,68 @@ function Projeto({ chamado, etapas, tarefas, salvando, atualizar, recarregarTare
   )
 }
 
+function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atualizar, onErro, avisar, recarregar }) {
+  const [recusando, setRecusando] = useState(false)
+  const [motivo, setMotivo] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const proxima = etapas.filter((e) => e.ativa && !e.aprovacao && !e.finaliza).sort((a, b) => a.ordem - b.ordem || a.id - b.id)[0]
+  const nomes = aprovadores.map((a) => a.nome || nomeDeEmail(a.email).split(' ')[0])
+
+  async function recusar(e) {
+    e.preventDefault()
+    if (motivo.trim().length < 3) return onErro('Escreva o motivo da recusa — ele vai no e-mail para o solicitante.')
+    setEnviando(true)
+    const m = await supabase.from('hd_mensagens').insert({ chamado_id: chamado.id, corpo: motivo.trim(), interna: false })
+    const s = m.error ? m : await supabase.from('hd_chamados').update({ status: 'cancelado' }).eq('id', chamado.id)
+    setEnviando(false)
+    if (s.error) return onErro(mensagemErro(s.error))
+    avisar('Projeto recusado. O solicitante foi avisado.')
+    setRecusando(false); setMotivo('')
+    recarregar()
+  }
+
+  if (!podeAprovar) {
+    return (
+      <div className="cartao aprovacao aguardando">
+        <Hourglass size={18} />
+        <div>
+          <strong>Aguardando aprovação da gerência</strong>
+          <small>{nomes.length ? `${nomes.join(', ')} ${nomes.length > 1 ? 'avaliam' : 'avalia'} se o projeto segue para o Backlog.` : 'A gerência avalia se o projeto segue para o Backlog.'}</small>
+        </div>
+      </div>
+    )
+  }
+  return (
+    <div className="cartao aprovacao">
+      <div className="aprovacao-topo">
+        <Hourglass size={18} />
+        <div>
+          <strong>Este projeto aguarda sua aprovação</strong>
+          <small>Aprovado, ele entra em {proxima ? <b>{proxima.nome}</b> : 'desenvolvimento'} e o dev é avisado. O solicitante recebe e-mail nos dois casos.</small>
+        </div>
+      </div>
+      {recusando ? (
+        <form onSubmit={recusar} className="aprovacao-recusa">
+          <textarea rows={3} autoFocus value={motivo} onChange={(e) => setMotivo(e.target.value)} maxLength={2000}
+            placeholder="Motivo da recusa (vai para o solicitante)…" />
+          <div className="aprovacao-botoes">
+            <button type="button" className="btn btn-leve" onClick={() => setRecusando(false)} disabled={enviando}>Voltar</button>
+            <button className="btn btn-perigo" disabled={enviando}><ThumbsDown size={16} /> {enviando ? 'Enviando…' : 'Confirmar recusa'}</button>
+          </div>
+        </form>
+      ) : (
+        <div className="aprovacao-botoes">
+          <button className="btn btn-leve" onClick={() => setRecusando(true)} disabled={salvando}><ThumbsDown size={16} /> Recusar</button>
+          <button className="btn btn-sucesso" disabled={salvando || !proxima}
+            onClick={() => atualizar({ etapa_id: proxima.id }, `Projeto aprovado e enviado para ${proxima.nome}`)}>
+            <ThumbsUp size={16} /> Aprovar
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Andamento({ chamado, etapas }) {
   const ativas = etapas.filter((e) => e.ativa)
   const idx = ativas.findIndex((e) => e.id === chamado.etapa_id)
@@ -127,7 +189,7 @@ function Andamento({ chamado, etapas }) {
 export default function Chamado() {
   const { id } = useParams()
   const chamadoId = Number(id)
-  const { perfil, categorias, etapas, responsaveis, avisar } = useSessao()
+  const { perfil, categorias, etapas, equipe, responsaveis, avisar } = useSessao()
   const navegar = useNavigate()
   const daEquipe = perfil.eh_agente || perfil.eh_dev
 
@@ -209,6 +271,7 @@ export default function Chamado() {
   }
 
   const agente = atende
+  const emAprovacao = !!chamado.etapa_id && !!etapas.find((e) => e.id === chamado.etapa_id)?.aprovacao
   const souSolicitante = chamado.solicitante_email === perfil.email
   const nomeSolicitante = chamado.solicitante_nome || nomeDeEmail(chamado.solicitante_email)
   const ativo = ativos.find((a) => a.id === chamado.ativo_id)
@@ -287,6 +350,11 @@ export default function Chamado() {
 
       <div className="grade-chamado">
         <section className="linha-tempo">
+          {emAprovacao && chamado.status !== 'cancelado' && (agente || perfil.pode_aprovar) && (
+            <Aprovacao chamado={chamado} etapas={etapas} podeAprovar={perfil.pode_aprovar} salvando={salvando}
+              aprovadores={equipe.filter((m) => m.ativo && (m.aprova || m.papel === 'gestor'))}
+              atualizar={atualizar} onErro={erro} avisar={avisar} recarregar={carregar} />
+          )}
           <article className="mensagem mensagem-inicial cartao">
             <header>
               <Avatar nome={nomeSolicitante} />
@@ -365,7 +433,7 @@ export default function Chamado() {
 
         <aside className="lateral">
           {agente && ehProjeto && (
-            <Projeto chamado={chamado} etapas={etapas} tarefas={tarefas} salvando={salvando}
+            <Projeto chamado={chamado} etapas={etapas} tarefas={tarefas} salvando={salvando} travado={emAprovacao && !perfil.pode_aprovar}
               atualizar={atualizar} recarregarTarefas={carregarTarefas} onErro={erro} />
           )}
           {!agente && ehProjeto && <Andamento chamado={chamado} etapas={etapas} />}

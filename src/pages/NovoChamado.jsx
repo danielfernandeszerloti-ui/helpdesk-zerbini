@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import { enviarAnexos, mensagemErro, nomeDeEmail, EXPEDIENTE } from '../lib/util'
+import { Mail } from 'lucide-react'
+import { enviarAnexos, mensagemErro, nomeDeEmail, EXPEDIENTE, ORIGENS, agoraLocal } from '../lib/util'
 import { SeletorArquivos } from '../components/ui'
 
 export default function NovoChamado() {
@@ -13,15 +14,17 @@ export default function NovoChamado() {
   const [arquivos, setArquivos] = useState([])
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
-  const [emNomeDe, setEmNomeDe] = useState(false)
+  const [params] = useSearchParams()
+  const [emNomeDe, setEmNomeDe] = useState(agente && params.get('registro') === '1')
+  const [reg, setReg] = useState({ origem: 'email', recebido_em: agoraLocal(), avisar: true })
   const [f, setF] = useState({
     categoria_id: '', titulo: '', descricao: '',
     solicitante_nome: perfil.nome || nomeDeEmail(perfil.email),
     solicitante_email: perfil.email, setor: perfil.setor || '', anydesk: perfil.anydesk || '', ativo_id: '',
+    ...(agente && params.get('registro') === '1' ? { solicitante_nome: '', solicitante_email: '', setor: '', anydesk: '' } : {}),
   })
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
-  const [params] = useSearchParams()
   useEffect(() => {
     if (params.get('kanban') && !f.categoria_id) {
       const k = categorias.find((c) => c.kanban && c.ativa)
@@ -40,6 +43,8 @@ export default function NovoChamado() {
     if (f.titulo.trim().length < 3) return setErro('Escreva um título (mínimo 3 letras).')
     if (f.descricao.trim().length < 3) return setErro('Descreva o problema ou a solicitação.')
     if (!f.solicitante_nome.trim()) return setErro('Informe o nome.')
+    if (agente && emNomeDe && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.solicitante_email.trim())) return setErro('Informe um e-mail válido do solicitante.')
+    if (agente && emNomeDe && reg.recebido_em && new Date(reg.recebido_em) > new Date()) return setErro('A data de recebimento não pode ser no futuro.')
     setEnviando(true)
     try {
       const registro = {
@@ -47,13 +52,18 @@ export default function NovoChamado() {
         solicitante_nome: f.solicitante_nome.trim(), setor: f.setor.trim(), anydesk: f.anydesk.trim(),
         ativo_id: f.ativo_id || null,
       }
-      if (agente && emNomeDe) registro.solicitante_email = f.solicitante_email.trim().toLowerCase()
+      if (agente && emNomeDe) {
+        registro.solicitante_email = f.solicitante_email.trim().toLowerCase()
+        registro.origem = reg.origem
+        registro.avisar_solicitante = reg.avisar
+        if (reg.recebido_em) registro.criado_em = new Date(reg.recebido_em).toISOString()
+      }
       const { data, error } = await supabase.from('hd_chamados').insert(registro).select('id').single()
       if (error) throw error
       if (arquivos.length) {
         try { await enviarAnexos(data.id, arquivos) } catch (err) { avisar('Chamado aberto, mas um anexo falhou: ' + mensagemErro(err), 'erro') }
       }
-      avisar('Chamado aberto! A TI já foi avisada.')
+      avisar(agente && emNomeDe ? `Chamado registrado${reg.avisar ? ' e solicitante avisado por e-mail' : ''}.` : 'Chamado aberto! A TI já foi avisada.')
       navegar(`/chamado/${data.id}`)
     } catch (err) {
       setErro(mensagemErro(err))
@@ -95,18 +105,41 @@ export default function NovoChamado() {
         <label className="campo">
           <span>Descrição <em>*</em></span>
           <textarea rows={5} value={f.descricao} onChange={set('descricao')} maxLength={10000}
-            placeholder="Conte o que aconteceu, desde quando e se aparece alguma mensagem de erro." />
+            placeholder={agente && emNomeDe ? 'Cole aqui o texto do e-mail ou resuma o pedido.' : 'Conte o que aconteceu, desde quando e se aparece alguma mensagem de erro.'} />
         </label>
 
         {agente && (
           <label className="check">
             <input type="checkbox" checked={emNomeDe} onChange={(e) => {
               setEmNomeDe(e.target.checked)
-              if (!e.target.checked) setF({ ...f, solicitante_email: perfil.email, solicitante_nome: perfil.nome || nomeDeEmail(perfil.email) })
+              if (!e.target.checked) setF({ ...f, solicitante_email: perfil.email, solicitante_nome: perfil.nome || nomeDeEmail(perfil.email), setor: perfil.setor || '', anydesk: perfil.anydesk || '' })
               else setF({ ...f, solicitante_email: '', solicitante_nome: '', setor: '', anydesk: '' })
             }} />
-            Abrir em nome de outro colaborador
+            Registrar pedido de outra pessoa (recebido por e-mail, telefone, Teams…)
           </label>
+        )}
+
+        {agente && emNomeDe && (
+          <div className="caixa-registro">
+            <div className="grade-2">
+              <label className="campo">
+                <span>Pedido recebido por</span>
+                <select value={reg.origem} onChange={(e) => setReg({ ...reg, origem: e.target.value })}>
+                  {Object.entries(ORIGENS).filter(([k]) => k !== 'sistema').map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </label>
+              <label className="campo">
+                <span>Recebido em</span>
+                <input type="datetime-local" value={reg.recebido_em} max={agoraLocal()} onChange={(e) => setReg({ ...reg, recebido_em: e.target.value })} />
+                <small className="dica">O prazo de SLA conta a partir daqui.</small>
+              </label>
+            </div>
+            <label className="check">
+              <input type="checkbox" checked={reg.avisar} onChange={(e) => setReg({ ...reg, avisar: e.target.checked })} />
+              <Mail size={15} /> Avisar o solicitante por e-mail (confirmação, respostas e finalização)
+            </label>
+            <small className="dica">Aceita e-mails de qualquer domínio. Quem não é @grupozerbini.com.br recebe os avisos sem botão e responde direto pelo e-mail — a resposta chega para o responsável pelo chamado.</small>
+          </div>
         )}
 
         <div className="grade-2">
@@ -118,10 +151,10 @@ export default function NovoChamado() {
             <span>E-mail <em>*</em></span>
             <input type="email" value={f.solicitante_email} onChange={set('solicitante_email')}
               readOnly={!(agente && emNomeDe)} className={!(agente && emNomeDe) ? 'somente-leitura' : ''}
-              placeholder="nome.sobrenome@grupozerbini.com.br" />
+              placeholder={agente && emNomeDe ? 'e-mail de quem fez o pedido' : 'nome.sobrenome@grupozerbini.com.br'} />
           </label>
           <label className="campo">
-            <span>Setor</span>
+            <span>{agente && emNomeDe ? 'Setor / empresa' : 'Setor'}</span>
             <input value={f.setor} onChange={set('setor')} maxLength={80} />
           </label>
           <label className="campo">

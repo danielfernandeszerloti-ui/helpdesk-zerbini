@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, Download, Search, ArrowUpDown, ArrowUp, ArrowDown, Inbox, X, RefreshCw } from 'lucide-react'
+import { Plus, Mail, Download, Search, ArrowUpDown, ArrowUp, ArrowDown, Inbox, X, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
   codigo, dataHora, emAndamento, situacaoSla, hojeExtenso, nomeDeEmail, baixarCsv,
-  STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM,
+  STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, ORIGENS,
 } from '../lib/util'
 import { StatusBadge, PrioridadeBadge, SlaTexto, Vazio } from '../components/ui'
 
@@ -128,11 +128,11 @@ export default function Painel() {
 
   function exportar() {
     const linhas = [['Código', 'Título', 'Solicitante', 'E-mail', 'Setor', 'Categoria', 'Status', 'Prioridade',
-      'Atribuído a', 'Criado em', 'Última alteração', 'Prazo SLA', 'Resolvido em', 'AnyDesk', 'Descrição']]
+      'Atribuído a', 'Origem', 'Criado em', 'Última alteração', 'Prazo SLA', 'Resolvido em', 'AnyDesk', 'Descrição']]
     for (const c of filtrados) {
       linhas.push([codigo(c.id), c.titulo, c.solicitante_nome, c.solicitante_email, c.setor, c.categoria?.nome || '',
         STATUS[c.status]?.rotulo, PRIORIDADE[c.prioridade]?.rotulo, c.atribuido_email ? nomeDeEmail(c.atribuido_email) : '',
-        dataHora(c.criado_em), dataHora(c.atualizado_em), c.prazo_sla ? dataHora(c.prazo_sla) : '',
+        ORIGENS[c.origem] || '', dataHora(c.criado_em), dataHora(c.atualizado_em), c.prazo_sla ? dataHora(c.prazo_sla) : '',
         c.resolvido_em ? dataHora(c.resolvido_em) : '', c.anydesk, c.descricao])
     }
     baixarCsv(`chamados-${new Date().toISOString().slice(0, 10)}.csv`, linhas)
@@ -147,6 +147,7 @@ export default function Painel() {
             <RefreshCw size={16} className={atualizando ? 'girando' : ''} />
           </button>
           <button className="btn btn-leve" onClick={exportar} disabled={!filtrados.length}><Download size={16} /> Exportar Excel</button>
+          <Link to="/novo?registro=1" className="btn btn-leve" title="Registrar um pedido que chegou por e-mail, telefone ou Teams"><Mail size={16} /> Registrar pedido</Link>
           <Link to="/novo" className="btn btn-primario"><Plus size={17} /> Novo chamado</Link>
         </div>
       </div>

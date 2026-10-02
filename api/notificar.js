@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   if (!segredoValido(req.headers['x-hd-segredo'])) return res.status(401).json({ erro: 'Não autorizado' })
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return res.status(500).json({ erro: 'SMTP_USER/SMTP_PASS não configurados na Vercel' })
 
-  const { para, assunto, html } = req.body || {}
+  const { para, assunto, html, responder_para: responderPara } = req.body || {}
   const destinos = (Array.isArray(para) ? para : [para]).filter((e) => typeof e === 'string' && /^[^@\s]+@[^@\s]+$/.test(e))
   if (!destinos.length || !assunto || !html) return res.status(400).json({ erro: 'Dados incompletos' })
 
@@ -40,6 +40,8 @@ export default async function handler(req, res) {
       subject: String(assunto).slice(0, 200),
       html,
       text: texto,
+      // solicitantes sem acesso ao sistema respondem direto para o responsável
+      ...(typeof responderPara === 'string' && /^[^@\s]+@[^@\s]+$/.test(responderPara) ? { replyTo: responderPara } : {}),
     })
     return res.status(200).json({ ok: true, id: info.messageId })
   } catch (e) {

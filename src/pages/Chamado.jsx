@@ -6,8 +6,11 @@ import { useSessao } from '../lib/sessao'
 import {
   codigo, dataHora, tempoRelativo, nomeDeEmail, enviarAnexos, abrirAnexo, tamanhoLegivel, mensagemErro,
   emAndamento, STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, dataCurta, previsaoAtrasada, previsaoColaborador,
+  ORIGENS, ehExterno,
 } from '../lib/util'
 import { Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
+
+const VIA = { email: 'por e-mail', telefone: 'por telefone', teams: 'pelo Teams', whatsapp: 'pelo WhatsApp', presencial: 'pessoalmente' }
 
 function paraInputLocal(iso) {
   if (!iso) return ''
@@ -134,6 +137,7 @@ export default function Chamado() {
   const [ativos, setAtivos] = useState([])
   const [texto, setTexto] = useState('')
   const [interna, setInterna] = useState(false)
+  const [doSolicitante, setDoSolicitante] = useState(false)
   const [novoStatus, setNovoStatus] = useState('')
   const [arquivos, setArquivos] = useState([])
   const [enviando, setEnviando] = useState(false)
@@ -227,7 +231,7 @@ export default function Chamado() {
     try {
       const corpo = texto.trim() || (arquivos.length === 1 ? 'Anexo enviado' : `${arquivos.length} anexos enviados`)
       const { data, error } = await supabase.from('hd_mensagens')
-        .insert({ chamado_id: chamadoId, corpo, interna: agente && interna })
+        .insert({ chamado_id: chamadoId, corpo, interna: agente && interna && !doSolicitante, do_solicitante: agente && doSolicitante })
         .select('id').single()
       if (error) throw error
       if (arquivos.length) await enviarAnexos(chamadoId, arquivos, data.id)
@@ -235,8 +239,8 @@ export default function Chamado() {
         const { error: e2 } = await supabase.from('hd_chamados').update({ status: novoStatus }).eq('id', chamadoId)
         if (e2) throw e2
       }
-      setTexto(''); setArquivos([]); setNovoStatus(''); setInterna(false)
-      avisar(interna ? 'Nota interna salva' : 'Resposta enviada')
+      setTexto(''); setArquivos([]); setNovoStatus(''); setInterna(false); setDoSolicitante(false)
+      avisar(doSolicitante ? 'Resposta do solicitante registrada' : interna ? 'Nota interna salva' : 'Resposta enviada')
       carregar()
     } catch (err) {
       erro(mensagemErro(err))
@@ -288,7 +292,10 @@ export default function Chamado() {
               <Avatar nome={nomeSolicitante} />
               <div>
                 <strong>{nomeSolicitante}</strong>
-                <small>abriu o chamado · {dataHora(chamado.criado_em)}</small>
+                <small>
+                  {chamado.registrado_por ? `pediu ${VIA[chamado.origem] || ''}` : 'abriu o chamado'} · {dataHora(chamado.criado_em)}
+                  {chamado.registrado_por && agente && <> · registrado por {nomeDeEmail(chamado.registrado_por)}</>}
+                </small>
               </div>
             </header>
             <div className="corpo">{chamado.descricao}</div>
@@ -310,6 +317,7 @@ export default function Chamado() {
                     {m.autor_email !== chamado.solicitante_email && <span className="tag-ti">TI</span>}
                   </strong>
                   <small title={dataHora(m.criado_em)}>{dataHora(m.criado_em)}</small>
+                  {m.registrado_por && agente && <small className="msg-registrada">resposta recebida fora do sistema · registrada por {nomeDeEmail(m.registrado_por)}</small>}
                 </div>
                 {m.interna && <span className="tag-interna"><Lock size={12} /> Nota interna</span>}
               </header>
@@ -323,17 +331,22 @@ export default function Chamado() {
           )}
 
           {podeResponder && (
-            <form className={'cartao resposta' + (interna ? ' interna' : '')} onSubmit={responder}>
+            <form className={'cartao resposta' + (interna && !doSolicitante ? ' interna' : '')} onSubmit={responder}>
               <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)}
-                placeholder={interna ? 'Nota interna — só a equipe vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI…'}
+                placeholder={doSolicitante ? `Cole aqui a resposta que ${nomeSolicitante.split(' ')[0]} enviou por e-mail…` : interna ? 'Nota interna — só a equipe vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI…'}
                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) responder(e) }} />
               <div className="resposta-rodape">
                 <SeletorArquivos compacto arquivos={arquivos} setArquivos={setArquivos} onErro={erro} />
                 {agente && (
                   <>
                     <label className="check">
-                      <input type="checkbox" checked={interna} onChange={(e) => setInterna(e.target.checked)} /> Nota interna
+                      <input type="checkbox" checked={interna} onChange={(e) => { setInterna(e.target.checked); if (e.target.checked) setDoSolicitante(false) }} /> Nota interna
                     </label>
+                    {!souSolicitante && (
+                      <label className="check" title="Registra no histórico uma resposta que o solicitante mandou por e-mail, telefone ou Teams. Não envia e-mail.">
+                        <input type="checkbox" checked={doSolicitante} onChange={(e) => { setDoSolicitante(e.target.checked); if (e.target.checked) setInterna(false) }} /> Resposta do solicitante
+                      </label>
+                    )}
                     <select value={novoStatus} onChange={(e) => setNovoStatus(e.target.value)} aria-label="Mudar status ao enviar">
                       <option value="">Manter status</option>
                       <option value="em_espera">e aguardar colaborador</option>
@@ -437,7 +450,11 @@ export default function Chamado() {
                 <small>{chamado.solicitante_email}</small>
               </div>
             </div>
+            {agente && ehExterno(chamado.solicitante_email) && (
+              <p className="dica">Sem acesso ao sistema: recebe os avisos por e-mail e, ao responder, a mensagem vai para {nomeDeEmail(chamado.atribuido_email || chamado.registrado_por || '') || 'o responsável'}.</p>
+            )}
             <dl className="detalhes">
+              {chamado.origem && chamado.origem !== 'sistema' && <><dt>Pedido via</dt><dd><span className="selo-origem">{ORIGENS[chamado.origem]}</span></dd></>}
               {chamado.setor && <><dt>Setor</dt><dd>{chamado.setor}</dd></>}
               {chamado.anydesk && (
                 <><dt>AnyDesk</dt>
@@ -449,6 +466,13 @@ export default function Chamado() {
               {agente && ativo && <><dt>Equipamento</dt><dd>{ativo.dispositivo}{ativo.modelo ? ` — ${ativo.modelo}` : ''}</dd></>}
               {agente && chamado.resolvido_em && <><dt>Resolvido em</dt><dd>{dataHora(chamado.resolvido_em)}</dd></>}
             </dl>
+            {perfil.eh_agente && !souSolicitante && (
+              <label className="check" style={{ marginTop: 10 }}>
+                <input type="checkbox" checked={chamado.avisar_solicitante !== false} disabled={salvando}
+                  onChange={(e) => atualizar({ avisar_solicitante: e.target.checked }, e.target.checked ? 'Solicitante volta a receber e-mails' : 'Avisos por e-mail desligados')} />
+                Avisar por e-mail
+              </label>
+            )}
           </div>
 
           {perfil.papel === 'admin' && (

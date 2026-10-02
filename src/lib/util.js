@@ -178,3 +178,20 @@ export function previsaoColaborador(c) {
 }
 
 export const EXPEDIENTE = 'seg a sex, das 8h às 17h45'
+
+// Por onde o pedido chegou (chamados registrados pela TI em nome de alguém)
+export const ORIGENS = {
+  sistema: 'Helpdesk',
+  email: 'E-mail',
+  telefone: 'Telefone',
+  teams: 'Teams',
+  whatsapp: 'WhatsApp',
+  presencial: 'Pessoalmente',
+}
+export const ehExterno = (email) => !!email && !String(email).toLowerCase().endsWith('@grupozerbini.com.br')
+
+// valor para <input type="datetime-local"> no fuso local
+export function agoraLocal(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
+}

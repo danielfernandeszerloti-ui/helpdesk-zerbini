@@ -65,6 +65,7 @@ O Supabase coloca os e-mails numa fila (`hd_notificacoes`) e, a cada minuto, cha
 | TI responde (exceto nota interna) | o colaborador |
 | Chamado finalizado | o colaborador (junto com a última resposta, num e-mail só) |
 | Projeto muda de etapa | o colaborador |
+| Pedido registrado pela TI | o solicitante recebe "Recebemos sua solicitação #0000" |
 
 Na Vercel → **Settings → Environment Variables** (Production) cadastre e faça um **Redeploy**:
 
@@ -107,6 +108,13 @@ As migrações estão em `supabase/migrations/` (já aplicadas no projeto):
 - Primeira resposta da TI em chamado **Novo** muda para **Aberto**.
 - O prazo de SLA vem das horas configuradas na categoria (tela *Categorias*).
 - Imagens acima de 800 KB são reduzidas no navegador antes do envio.
+
+### Pedidos que chegam por e-mail, telefone ou Teams
+- **Painel → Registrar pedido** (ou *Novo chamado → Registrar pedido de outra pessoa*): informe por onde chegou, quando chegou (o SLA conta dali), nome, e-mail e setor/empresa do solicitante e cole o texto do e-mail na descrição.
+- Aceita e-mail de **qualquer domínio** (ex.: indústrias com outro domínio). Quem não é `@grupozerbini.com.br` não acessa o sistema: recebe confirmação, respostas e finalização por e-mail, sem botão, e ao responder o e-mail a mensagem vai direto para o responsável (Reply-To).
+- Quando o solicitante responder por e-mail, cole a resposta no chamado marcando **Resposta do solicitante** — fica no histórico em nome dele, sem disparar e-mail.
+- **Avisar por e-mail** (no cartão Solicitante) liga/desliga os avisos para aquele chamado.
+- O Painel exporta a coluna *Origem* no Excel.
 
 ### Atendimento e aparência
 - **Configurações → Equipe → Atende chamados**: define quem aparece em "Atribuído a" e recebe e-mail de chamado novo. Quem não atende (ex.: gestores) continua vendo tudo.

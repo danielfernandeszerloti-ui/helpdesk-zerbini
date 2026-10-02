@@ -613,3 +613,9 @@ html[data-tema="escuro"] .cor-roxo { --etapa: #5f73f0; }
 .login-ajuda { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 500; }
 html[data-tema="escuro"] .login-ajuda { color: #9aa7ff; }
 @media (max-width: 720px) { .btn-ajuda span { display: none; } .btn-ajuda { padding: 6px; border: 0; } }
+
+/* Registro de pedido recebido por e-mail/telefone */
+.caixa-registro { display: grid; gap: 10px; padding: 14px 16px; border: 1px dashed var(--linha); border-radius: 10px; background: var(--sup-2); }
+.caixa-registro .check svg { color: var(--texto-2); }
+.selo-origem { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--sup-3); color: var(--texto-2); }
+.msg-registrada { font-size: 11.5px; color: var(--texto-3); font-style: italic; }

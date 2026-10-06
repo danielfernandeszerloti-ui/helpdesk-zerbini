@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
   codigo, dataHora, emAndamento, situacaoSla, hojeExtenso, nomeDeEmail, baixarCsv,
-  STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, ORIGENS,
+  STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, ORIGENS, TIPOS, moeda,
 } from '../lib/util'
-import { StatusBadge, PrioridadeBadge, SlaTexto, Vazio } from '../components/ui'
+import { StatusBadge, PrioridadeBadge, SlaTexto, Vazio, TipoBadge } from '../components/ui'
 
 const CARDS = [
   { chave: 'nao_lidos', rotulo: 'Não lidos', teste: (c) => emAndamento(c) && !c.lido_agente },
@@ -17,6 +17,7 @@ const CARDS = [
   { chave: 'pausados', rotulo: 'Pausados', teste: (c) => c.status === 'pausado' },
   { chave: 'nao_atribuidos', rotulo: 'Não atribuídos', teste: (c) => emAndamento(c) && !c.atribuido_email },
   { chave: 'hoje', rotulo: 'Encerram hoje', teste: (c) => situacaoSla(c) === 'hoje' },
+  { chave: 'aprovacao', rotulo: 'Aguardando aprovação', teste: (c) => emAndamento(c) && c.aprovacao === 'pendente', destaque: true },
 ]
 
 const COLUNAS = [
@@ -49,6 +50,7 @@ export default function Painel() {
     categoria: params.get('cat') || '',
     atribuido: params.get('resp') || '',
     prioridade: params.get('prio') || '',
+    tipo: params.get('tipo') || '',
     ordem: params.get('ordem') || 'atualizado_em',
     dir: params.get('dir') || 'desc',
   }
@@ -97,6 +99,7 @@ export default function Painel() {
       }
       if (filtro.categoria && String(c.categoria_id) !== filtro.categoria) return false
       if (filtro.prioridade && c.prioridade !== filtro.prioridade) return false
+      if (filtro.tipo && c.tipo !== filtro.tipo) return false
       if (filtro.atribuido === 'eu' && c.atribuido_email !== perfil.email) return false
       if (filtro.atribuido === 'ninguem' && c.atribuido_email) return false
       if (filtro.atribuido && !['eu', 'ninguem'].includes(filtro.atribuido) && c.atribuido_email !== filtro.atribuido) return false
@@ -113,12 +116,12 @@ export default function Painel() {
       return (va < vb ? -1 : va > vb ? 1 : b.id - a.id) * m
     })
     return r
-  }, [lista, filtro.card, filtro.busca, filtro.status, filtro.categoria, filtro.prioridade, filtro.atribuido, filtro.ordem, filtro.dir, perfil.email])
+  }, [lista, filtro.card, filtro.busca, filtro.status, filtro.categoria, filtro.prioridade, filtro.tipo, filtro.atribuido, filtro.ordem, filtro.dir, perfil.email])
 
   const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA))
   const paginaAtual = Math.min(pagina, totalPaginas - 1)
   const visiveis = filtrados.slice(paginaAtual * POR_PAGINA, (paginaAtual + 1) * POR_PAGINA)
-  const filtrosAtivos = [filtro.card, filtro.busca, filtro.categoria, filtro.atribuido, filtro.prioridade].filter(Boolean).length
+  const filtrosAtivos = [filtro.card, filtro.busca, filtro.categoria, filtro.atribuido, filtro.prioridade, filtro.tipo].filter(Boolean).length
     + (filtro.status !== 'andamento' ? 1 : 0)
 
   function ordenar(chave) {
@@ -128,11 +131,11 @@ export default function Painel() {
 
   function exportar() {
     const linhas = [['Código', 'Título', 'Solicitante', 'E-mail', 'Setor', 'Categoria', 'Status', 'Prioridade',
-      'Atribuído a', 'Origem', 'Criado em', 'Última alteração', 'Prazo SLA', 'Resolvido em', 'AnyDesk', 'Descrição']]
+      'Atribuído a', 'Tipo', 'Origem', 'Aprovação', 'Valor estimado', 'Criado em', 'Última alteração', 'Prazo SLA', 'Resolvido em', 'AnyDesk', 'Descrição']]
     for (const c of filtrados) {
       linhas.push([codigo(c.id), c.titulo, c.solicitante_nome, c.solicitante_email, c.setor, c.categoria?.nome || '',
         STATUS[c.status]?.rotulo, PRIORIDADE[c.prioridade]?.rotulo, c.atribuido_email ? nomeDeEmail(c.atribuido_email) : '',
-        ORIGENS[c.origem] || '', dataHora(c.criado_em), dataHora(c.atualizado_em), c.prazo_sla ? dataHora(c.prazo_sla) : '',
+        TIPOS[c.tipo]?.rotulo || '', ORIGENS[c.origem] || '', { pendente: 'Aguardando', aprovada: 'Aprovada', recusada: 'Recusada' }[c.aprovacao] || '', moeda(c.valor_estimado), dataHora(c.criado_em), dataHora(c.atualizado_em), c.prazo_sla ? dataHora(c.prazo_sla) : '',
         c.resolvido_em ? dataHora(c.resolvido_em) : '', c.anydesk, c.descricao])
     }
     baixarCsv(`chamados-${new Date().toISOString().slice(0, 10)}.csv`, linhas)
@@ -155,7 +158,7 @@ export default function Painel() {
       <div className="cards">
         {CARDS.map((card) => (
           <button key={card.chave}
-            className={'card-contador' + (filtro.card === card.chave ? ' ativo' : '') + (card.alerta && contagens[card.chave] ? ' alerta' : '')}
+            className={'card-contador' + (filtro.card === card.chave ? ' ativo' : '') + (card.alerta && contagens[card.chave] ? ' alerta' : '') + (card.destaque && contagens[card.chave] ? ' destaque' : '')}
             onClick={() => mudar({ card: filtro.card === card.chave ? '' : card.chave })}>
             <span>{card.rotulo}</span>
             <strong>{lista ? contagens[card.chave] : '–'}</strong>
@@ -174,6 +177,10 @@ export default function Painel() {
             <option value="andamento">Em andamento</option>
             <option value="todos">Todos os status</option>
             {STATUS_ORDEM.map((s) => <option key={s} value={s}>{STATUS[s].rotulo}</option>)}
+          </select>
+          <select value={filtro.tipo} onChange={(e) => mudar({ tipo: e.target.value })} aria-label="Tipo">
+            <option value="">Incidentes e solicitações</option>
+            {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v.rotulo}s</option>)}
           </select>
           <select value={filtro.categoria} onChange={(e) => mudar({ cat: e.target.value })} aria-label="Categoria">
             <option value="">Todas as categorias</option>
@@ -227,7 +234,7 @@ export default function Painel() {
                       </Link>
                     </td>
                     <td>{c.solicitante_nome || nomeDeEmail(c.solicitante_email)}{c.setor && <small className="sub">{c.setor}</small>}</td>
-                    <td>{c.categoria?.nome || '—'}</td>
+                    <td>{c.categoria?.nome || '—'}{TIPOS[c.tipo] && <small className="sub">{TIPOS[c.tipo].rotulo}</small>}</td>
                     <td className="nowrap">{dataHora(c.atualizado_em)}</td>
                     <td className="nowrap">{dataHora(c.criado_em)}</td>
                     <td>{c.atribuido_email ? nomeDeEmail(c.atribuido_email) : <span className="texto-suave">Não atribuído</span>}</td>
@@ -246,6 +253,7 @@ export default function Painel() {
                       <span className="codigo">{codigo(c.id)}</span>
                       <StatusBadge status={c.status} />
                       <PrioridadeBadge prioridade={c.prioridade} />
+                      <TipoBadge tipo={c.tipo} />
                     </div>
                     <strong className="item-titulo">
                       {!c.lido_agente && emAndamento(c) && <span className="ponto-novo" />}{c.titulo}

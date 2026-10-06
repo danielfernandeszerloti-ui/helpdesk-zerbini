@@ -159,7 +159,7 @@ select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmln
 .topo .avatar { background: var(--turquesa-claro); color: var(--marinho); }
 
 /* ---------- Painel ---------- */
-.cards { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; margin-bottom: 20px; }
+.cards { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
 .card-contador { background: var(--sup); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); padding: 14px 10px; display: grid; gap: 2px; justify-items: center; cursor: pointer; transition: border-color .15s, transform .15s; }
 .card-contador:hover { border-color: var(--roxo); transform: translateY(-1px); }
 .card-contador span { font-weight: 600; font-size: 14px; color: var(--texto-2); }
@@ -730,3 +730,38 @@ html[data-tema="escuro"] .ih-chamado { color: #a9b4ff; }
 .checklist li > span { flex: 1; min-width: 0; }
 .checklist li .sub { display: block; font-size: 11.5px; color: var(--texto-3); }
 .tarefa-dica { margin: 8px 0 0; font-size: 12px; color: var(--texto-3); }
+
+/* Tipo e aprovação */
+.tipo { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.tipo-incidente { color: #c2410c; }
+.tipo-solicitacao { color: #3245b8; }
+html[data-tema="escuro"] .tipo-incidente { color: #fb923c; }
+html[data-tema="escuro"] .tipo-solicitacao { color: #9aa8ff; }
+.sla-aprovacao { color: #a16207; font-weight: 600; }
+html[data-tema="escuro"] .sla-aprovacao { color: #f5c542; }
+.card-contador.destaque { border-color: #e0a100; background: color-mix(in srgb, #f5b800 12%, var(--sup)); }
+.alerta-aprovacao { display: flex; gap: 12px; align-items: flex-start; border-left: 4px solid #e0a100; background: color-mix(in srgb, #f5b800 10%, var(--sup)); color: var(--texto); }
+.alerta-aprovacao svg { color: #b07d00; flex: none; margin-top: 1px; }
+.alerta-aprovacao div { display: grid; gap: 2px; }
+.alerta-aprovacao span { color: var(--texto-2); font-size: 13.5px; }
+.campo-valor input { max-width: 240px; }
+.aprov-valor { display: block; margin-top: 4px; }
+.aprov-resumo { margin: -4px 0 12px; font-size: 12.5px; padding: 6px 10px; border-radius: 8px; background: var(--sup-2); color: var(--texto-2); }
+.aprov-resumo.aprovada { border-left: 3px solid var(--serie-2); }
+.aprov-resumo.recusada { border-left: 3px solid var(--rosa); }
+.aprov-col.pendente { color: #a16207; font-weight: 600; }
+.aprov-col.aprovada { color: var(--verde); font-weight: 600; }
+.aprov-col.recusada { color: var(--vermelho); font-weight: 600; }
+.pilula-aprov { font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, #f5b800 20%, transparent); color: #8a5a00; }
+html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
+.hr-item.aprov { border-color: #e0a100; background: color-mix(in srgb, #f5b800 10%, var(--sup)); }
+.hr-item.link.aprov + .hr-item.link { margin-left: 0; }
+.dash-lista { display: grid; grid-template-columns: 1fr auto; gap: 10px 16px; margin: 6px 0 0; }
+.dash-lista dt { color: var(--texto-2); }
+.dash-lista dd { margin: 0; font-weight: 700; text-align: right; }
+.dash-lista dd small { font-weight: 500; color: var(--texto-3); }
+.dash-lista dd.pend-aprov { color: #b07d00; }
+.config-conteudo .tabela-edicao td:first-child input { min-width: 230px; }
+.config-conteudo .tabela-edicao input[type=number] { width: 84px; }
+.config-conteudo .tabela-edicao select { min-width: 132px; }
+.pagina-config { max-width: 1120px; }

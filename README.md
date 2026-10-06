@@ -61,6 +61,13 @@ A aba **Hoje** é a página inicial da TI: uma fila única do dia com as suas ta
 - Finalizar um chamado (ou mover o projeto para Concluído) com tarefas abertas pede confirmação.
 - Tarefas avulsas são pessoais (só quem criou e o responsável veem). Tarefas de chamado são vistas por quem atende o chamado. O checklist dos projetos do Kanban usa as mesmas tarefas.
 
+### Tipo e aprovações
+- **Tipo**: cada chamado é **Incidente** (algo parou) ou **Solicitação** (pedido de algo novo). Vem da categoria (Configurações → Categorias → Tipo) e pode ser trocado no chamado. Filtro no Painel e nos Indicadores; coluna no Excel.
+- **Exige aprovação** (por categoria — hoje *Solicitação de Compra* e *Aquisição de Equipamentos e Serviços de TI*): o chamado entra *Aguardando aprovação*, com campo opcional de **valor estimado**. Quem aprova (Equipe → Aprova projetos, ou perfil Gestor) recebe e-mail e decide no chamado:
+  - **Aprovar** → o SLA começa a contar, a TI e o solicitante são avisados.
+  - **Recusar** → pede o motivo, que vai por e-mail ao solicitante; o chamado é cancelado.
+- Enquanto aguarda, ninguém finaliza o chamado. Painel tem o card *Aguardando aprovação*; o Hoje de quem aprova mostra um atalho; Indicadores mostram aprovadas, recusadas, valor e tempo médio até a decisão.
+
 ### Indicadores
 Aba **Indicadores** (TI/admin): SLA cumprido, abertos × concluídos, pendentes, tempo médio de 1ª resposta e de resolução (com mediana e comparação com o período anterior), pendentes por idade/prioridade, abertos por setor, tabelas por categoria e por responsável e os pendentes mais antigos. Filtros de período, categoria e responsável.
 - **SLA cumprido** = concluídos no período com prazo de SLA que foram resolvidos dentro do prazo.

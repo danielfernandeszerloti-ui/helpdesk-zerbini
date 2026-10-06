@@ -7,9 +7,10 @@ import {
   codigo, dataHora, tempoRelativo, nomeDeEmail, enviarAnexos, abrirAnexo, tamanhoLegivel, mensagemErro,
   emAndamento, STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, dataCurta, previsaoAtrasada, previsaoColaborador,
   ORIGENS, ehExterno,
+  TIPOS, moeda,
 } from '../lib/util'
 import { hojeISO, rotuloPrazo } from '../lib/tarefas'
-import { Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
+import { TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
 
 const VIA = { email: 'por e-mail', telefone: 'por telefone', teams: 'pelo Teams', whatsapp: 'pelo WhatsApp', presencial: 'pessoalmente' }
 
@@ -64,7 +65,8 @@ function Projeto({ chamado, etapas, salvando, atualizar, travado, confirmarFinal
   )
 }
 
-function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atualizar, onErro, avisar, recarregar }) {
+function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atualizar, onErro, avisar, recarregar, modo = 'kanban' }) {
+  const projeto = modo === 'kanban'
   const [recusando, setRecusando] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -76,10 +78,10 @@ function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atuali
     if (motivo.trim().length < 3) return onErro('Escreva o motivo da recusa — ele vai no e-mail para o solicitante.')
     setEnviando(true)
     const m = await supabase.from('hd_mensagens').insert({ chamado_id: chamado.id, corpo: motivo.trim(), interna: false })
-    const s = m.error ? m : await supabase.from('hd_chamados').update({ status: 'cancelado' }).eq('id', chamado.id)
+    const s = m.error ? m : await supabase.from('hd_chamados').update(projeto ? { status: 'cancelado' } : { aprovacao: 'recusada' }).eq('id', chamado.id)
     setEnviando(false)
     if (s.error) return onErro(mensagemErro(s.error))
-    avisar('Projeto recusado. O solicitante foi avisado.')
+    avisar((projeto ? 'Projeto recusado' : 'Solicitação recusada') + '. O solicitante foi avisado.')
     setRecusando(false); setMotivo('')
     recarregar()
   }
@@ -90,7 +92,8 @@ function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atuali
         <Hourglass size={18} />
         <div>
           <strong>Aguardando aprovação da gerência</strong>
-          <small>{nomes.length ? `${nomes.join(', ')} ${nomes.length > 1 ? 'avaliam' : 'avalia'} se o projeto segue para o Backlog.` : 'A gerência avalia se o projeto segue para o Backlog.'}</small>
+          <small>{(nomes.length ? `${nomes.join(', ')} ${nomes.length > 1 ? 'avaliam' : 'avalia'}` : 'A gerência avalia') + (projeto ? ' se o projeto segue para o Backlog.' : ' a solicitação. O SLA começa a contar depois da aprovação.')}</small>
+          {!projeto && chamado.valor_estimado != null && <small>Valor estimado: <b>{moeda(chamado.valor_estimado)}</b></small>}
         </div>
       </div>
     )
@@ -100,8 +103,11 @@ function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atuali
       <div className="aprovacao-topo">
         <Hourglass size={18} />
         <div>
-          <strong>Este projeto aguarda sua aprovação</strong>
-          <small>Aprovado, ele entra em {proxima ? <b>{proxima.nome}</b> : 'desenvolvimento'} e o dev é avisado. O solicitante recebe e-mail nos dois casos.</small>
+          <strong>{projeto ? 'Este projeto aguarda sua aprovação' : 'Esta solicitação aguarda sua aprovação'}</strong>
+          {projeto
+            ? <small>Aprovado, ele entra em {proxima ? <b>{proxima.nome}</b> : 'desenvolvimento'} e o dev é avisado. O solicitante recebe e-mail nos dois casos.</small>
+            : <small>Aprovada, segue para a TI e o prazo de atendimento começa a contar. O solicitante recebe e-mail nos dois casos.</small>}
+          {!projeto && chamado.valor_estimado != null && <small className="aprov-valor">Valor estimado: <b>{moeda(chamado.valor_estimado)}</b></small>}
         </div>
       </div>
       {recusando ? (
@@ -116,8 +122,8 @@ function Aprovacao({ chamado, etapas, podeAprovar, aprovadores, salvando, atuali
       ) : (
         <div className="aprovacao-botoes">
           <button className="btn btn-leve" onClick={() => setRecusando(true)} disabled={salvando}><ThumbsDown size={16} /> Recusar</button>
-          <button className="btn btn-sucesso" disabled={salvando || !proxima}
-            onClick={() => atualizar({ etapa_id: proxima.id }, `Projeto aprovado e enviado para ${proxima.nome}`)}>
+          <button className="btn btn-sucesso" disabled={salvando || (projeto && !proxima)}
+            onClick={() => projeto ? atualizar({ etapa_id: proxima.id }, `Projeto aprovado e enviado para ${proxima.nome}`) : atualizar({ aprovacao: 'aprovada' }, 'Solicitação aprovada. A TI e o solicitante foram avisados.')}>
             <ThumbsUp size={16} /> Aprovar
           </button>
         </div>
@@ -375,12 +381,18 @@ export default function Chamado() {
         </div>
         <div className="acoes">
           <StatusBadge status={chamado.status} />
+          {agente && <TipoBadge tipo={chamado.tipo} />}
           {agente && <PrioridadeBadge prioridade={chamado.prioridade} />}
         </div>
       </div>
 
       <div className="grade-chamado">
         <section className="linha-tempo">
+          {chamado.aprovacao === 'pendente' && chamado.status !== 'cancelado' && (agente || perfil.pode_aprovar) && (
+            <Aprovacao modo="categoria" chamado={chamado} etapas={etapas} podeAprovar={perfil.pode_aprovar} salvando={salvando}
+              aprovadores={equipe.filter((m) => m.ativo && (m.aprova || m.papel === 'gestor'))}
+              atualizar={atualizar} onErro={erro} avisar={avisar} recarregar={carregar} />
+          )}
           {emAprovacao && chamado.status !== 'cancelado' && (agente || perfil.pode_aprovar) && (
             <Aprovacao chamado={chamado} etapas={etapas} podeAprovar={perfil.pode_aprovar} salvando={salvando}
               aprovadores={equipe.filter((m) => m.ativo && (m.aprova || m.papel === 'gestor'))}
@@ -483,6 +495,21 @@ export default function Chamado() {
                   {STATUS_ORDEM.map((s) => <option key={s} value={s}>{STATUS[s].rotulo}</option>)}
                 </select>
               </label>
+              {perfil.eh_agente && (
+                <label className="campo">
+                  <span>Tipo</span>
+                  <select value={chamado.tipo || ''} disabled={salvando} onChange={(e) => atualizar({ tipo: e.target.value }, 'Tipo atualizado')}>
+                    {!chamado.tipo && <option value="">—</option>}
+                    {Object.entries(TIPOS).map(([k, v]) => <option key={k} value={k}>{v.rotulo}</option>)}
+                  </select>
+                </label>
+              )}
+              {chamado.aprovacao && chamado.aprovacao !== 'pendente' && (
+                <p className={'aprov-resumo ' + chamado.aprovacao}>
+                  {chamado.aprovacao === 'aprovada' ? 'Aprovada' : 'Recusada'}{chamado.aprovado_por ? ` por ${nomeDeEmail(chamado.aprovado_por)}` : ''}{chamado.aprovado_em ? ` em ${dataHora(chamado.aprovado_em).slice(0, 10)}` : ''}
+                  {chamado.valor_estimado != null && <> · {moeda(chamado.valor_estimado)}</>}
+                </p>
+              )}
               <label className="campo">
                 <span>Prioridade</span>
                 <select value={chamado.prioridade} disabled={salvando} onChange={(e) => atualizar({ prioridade: e.target.value }, 'Prioridade atualizada')}>
@@ -534,6 +561,8 @@ export default function Chamado() {
               <h3>Detalhes</h3>
               <dl className="detalhes">
                 <dt>Status</dt><dd><StatusBadge status={chamado.status} /></dd>
+                {chamado.aprovacao && <><dt>Aprovação</dt><dd className={'aprov-col ' + chamado.aprovacao}>{{ pendente: 'Aguardando a gerência', aprovada: 'Aprovada', recusada: 'Não aprovada' }[chamado.aprovacao]}</dd></>}
+                {chamado.valor_estimado != null && <><dt>Valor estimado</dt><dd>{moeda(chamado.valor_estimado)}</dd></>}
                 <dt>Categoria</dt><dd>{chamado.categoria?.nome || '—'}</dd>
                 <dt>Responsável</dt><dd>{chamado.atribuido_email ? nomeDeEmail(chamado.atribuido_email) : 'Aguardando atendimento'}</dd>
                 {previsaoColaborador(chamado) && <><dt>Previsão</dt><dd className={'previsao-col ' + previsaoColaborador(chamado).tipo}>{previsaoColaborador(chamado).texto.replace(/^Previsão de atendimento: /, '')}</dd></>}

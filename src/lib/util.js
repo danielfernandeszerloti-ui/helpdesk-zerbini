@@ -195,3 +195,9 @@ export function agoraLocal(d = new Date()) {
   const p = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
 }
+
+export const TIPOS = {
+  incidente: { rotulo: 'Incidente', desc: 'algo parou ou não funciona como deveria' },
+  solicitacao: { rotulo: 'Solicitação', desc: 'pedido de algo novo: acesso, equipamento, compra' },
+}
+export const moeda = (v) => (v == null || v === '' ? '' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }))

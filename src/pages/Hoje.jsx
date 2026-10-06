@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Check, Plus, Repeat, Ticket, Pencil, Trash2, ArrowRight, CalendarDays, Flag, ChevronDown, ChevronRight, Inbox, RefreshCw,
+  Check, Plus, Repeat, Ticket, Pencil, Trash2, ArrowRight, CalendarDays, Flag, ShieldCheck, ChevronDown, ChevronRight, Inbox, RefreshCw,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
@@ -212,7 +212,9 @@ function ItemChamado({ c, grupo }) {
 }
 
 export default function Hoje() {
-  const { perfil, avisar } = useSessao()
+  const { perfil, avisar, etapas } = useSessao()
+  const [aprovar, setAprovar] = useState({ compras: 0, projetos: 0 })
+  const etapaAprov = etapas.find((e) => e.aprovacao && e.ativa)?.id
   const [tarefas, setTarefas] = useState(null)
   const [chamados, setChamados] = useState([])
   const [semResp, setSemResp] = useState(0)
@@ -224,7 +226,7 @@ export default function Hoje() {
   const carregar = useCallback(async () => {
     setAtualizando(true)
     const desde = new Date(Date.now() - 7 * 864e5).toISOString()
-    const [t, c, s] = await Promise.all([
+    const [t, c, s, ap] = await Promise.all([
       supabase.from('hd_tarefas').select('*, chamado:hd_chamados(id,titulo,status)')
         .eq('responsavel_email', perfil.email).or(`feita.eq.false,feita_em.gte.${desde}`)
         .order('prazo', { ascending: true, nullsFirst: false }).order('prazo_hora', { ascending: true, nullsFirst: false }).order('ordem').limit(500),
@@ -233,13 +235,19 @@ export default function Hoje() {
       perfil.eh_agente
         ? supabase.from('hd_chamados').select('id', { count: 'exact', head: true }).is('atribuido_email', null).in('status', ['novo', 'aberto'])
         : Promise.resolve({ count: 0 }),
+      perfil.pode_aprovar
+        ? supabase.from('hd_chamados').select('id,aprovacao,etapa_id').in('status', ['novo', 'aberto', 'em_espera', 'pausado'])
+            .or(`aprovacao.eq.pendente${etapaAprov ? `,etapa_id.eq.${etapaAprov}` : ''}`).limit(500)
+        : Promise.resolve({ data: [] }),
     ])
+    const lsAp = ap.data || []
+    setAprovar({ compras: lsAp.filter((x) => x.aprovacao === 'pendente').length, projetos: lsAp.filter((x) => etapaAprov && x.etapa_id === etapaAprov).length })
     if (t.error) avisar(mensagemErro(t.error), 'erro')
     setTarefas(t.data || [])
     setChamados((c.data || []).filter((x) => emAndamento(x) && !x.etapa_id))
     setSemResp(s.count || 0)
     setAtualizando(false)
-  }, [perfil.email, perfil.eh_agente, avisar])
+  }, [perfil.email, perfil.eh_agente, perfil.pode_aprovar, etapaAprov, avisar])
 
   useEffect(() => {
     carregar()
@@ -287,6 +295,8 @@ export default function Hoje() {
         <div className={'hr-item vermelho' + (grupos.atrasadas.length ? '' : ' zero')}><strong>{grupos.atrasadas.length}</strong><span>atrasadas</span></div>
         <div className={'hr-item laranja' + (grupos.hoje.length ? '' : ' zero')}><strong>{grupos.hoje.length}</strong><span>para hoje</span></div>
         <div className="hr-item azul"><strong>{grupos.proximas.length}</strong><span>próximos 7 dias</span></div>
+        {aprovar.compras > 0 && <Link to="/painel?card=aprovacao" className="hr-item link aprov"><ShieldCheck size={16} /><span><b>{aprovar.compras}</b> aguardando sua aprovação</span></Link>}
+        {aprovar.projetos > 0 && <Link to="/kanban" className="hr-item link aprov"><ShieldCheck size={16} /><span><b>{aprovar.projetos}</b> projeto{aprovar.projetos > 1 ? 's' : ''} para aprovar</span></Link>}
         {semResp > 0 && <Link to="/painel?card=nao_atribuidos" className="hr-item link"><Inbox size={16} /><span><b>{semResp}</b> chamado{semResp > 1 ? 's' : ''} sem responsável</span></Link>}
       </div>
 

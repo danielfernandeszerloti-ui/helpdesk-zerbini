@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Paperclip, Upload, X, FileText } from 'lucide-react'
-import { STATUS, PRIORIDADE, iniciais, tamanhoLegivel, LIMITE_ARQUIVO, situacaoSla, dataHora } from '../lib/util'
+import { STATUS, PRIORIDADE, TIPOS, iniciais, tamanhoLegivel, LIMITE_ARQUIVO, situacaoSla, dataHora } from '../lib/util'
 
 export function Avatar({ nome, pequeno }) {
   return <span className={'avatar' + (pequeno ? ' avatar-p' : '')} aria-hidden>{iniciais(nome)}</span>
@@ -16,7 +16,13 @@ export function PrioridadeBadge({ prioridade }) {
   return <span className={`prio prio-${p.cor}`}><i />{p.rotulo}</span>
 }
 
+export function TipoBadge({ tipo }) {
+  if (!TIPOS[tipo]) return null
+  return <span className={`tipo tipo-${tipo}`} title={TIPOS[tipo].desc}>{TIPOS[tipo].rotulo}</span>
+}
+
 export function SlaTexto({ chamado }) {
+  if (chamado.aprovacao === 'pendente' && !['resolvido', 'cancelado'].includes(chamado.status)) return <span className="sla sla-aprovacao">Aguardando aprovação</span>
   const s = situacaoSla(chamado)
   if (s === 'sem') return <span className="texto-suave">Sem SLA</span>
   if (s === 'pausado') return <span className="sla sla-pausado" title={`Prazo: ${dataHora(chamado.prazo_sla)}`}>Pausado<small className="sub">aguardando colaborador</small></span>

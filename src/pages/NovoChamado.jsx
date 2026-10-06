@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import { Mail } from 'lucide-react'
 import { enviarAnexos, mensagemErro, nomeDeEmail, EXPEDIENTE, ORIGENS, agoraLocal } from '../lib/util'
+import { ShieldCheck } from 'lucide-react'
 import { SeletorArquivos } from '../components/ui'
 
 export default function NovoChamado() {
@@ -20,7 +21,7 @@ export default function NovoChamado() {
   const [f, setF] = useState({
     categoria_id: '', titulo: '', descricao: '',
     solicitante_nome: perfil.nome || nomeDeEmail(perfil.email),
-    solicitante_email: perfil.email, setor: perfil.setor || '', anydesk: perfil.anydesk || '', ativo_id: '',
+    solicitante_email: perfil.email, setor: perfil.setor || '', anydesk: perfil.anydesk || '', ativo_id: '', valor_estimado: '',
     ...(agente && params.get('registro') === '1' ? { solicitante_nome: '', solicitante_email: '', setor: '', anydesk: '' } : {}),
   })
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -35,6 +36,8 @@ export default function NovoChamado() {
   useEffect(() => {
     supabase.rpc('hd_meus_ativos').then(({ data }) => setMeusAtivos(data || []))
   }, [])
+
+  const catSel = categorias.find((c) => String(c.id) === String(f.categoria_id))
 
   async function enviar(e) {
     e.preventDefault()
@@ -51,6 +54,7 @@ export default function NovoChamado() {
         categoria_id: Number(f.categoria_id), titulo: f.titulo, descricao: f.descricao,
         solicitante_nome: f.solicitante_nome.trim(), setor: f.setor.trim(), anydesk: f.anydesk.trim(),
         ativo_id: f.ativo_id || null,
+        valor_estimado: catSel?.exige_aprovacao && f.valor_estimado !== '' ? Number(String(f.valor_estimado).replace(/\./g, '').replace(',', '.')) || null : null,
       }
       if (agente && emNomeDe) {
         registro.solicitante_email = f.solicitante_email.trim().toLowerCase()
@@ -63,7 +67,7 @@ export default function NovoChamado() {
       if (arquivos.length) {
         try { await enviarAnexos(data.id, arquivos) } catch (err) { avisar('Chamado aberto, mas um anexo falhou: ' + mensagemErro(err), 'erro') }
       }
-      avisar(agente && emNomeDe ? `Chamado registrado${reg.avisar ? ' e solicitante avisado por e-mail' : ''}.` : 'Chamado aberto! A TI já foi avisada.')
+      avisar(catSel?.exige_aprovacao ? 'Solicitação enviada para aprovação da gerência.' : agente && emNomeDe ? `Chamado registrado${reg.avisar ? ' e solicitante avisado por e-mail' : ''}.` : 'Chamado aberto! A TI já foi avisada.')
       navegar(`/chamado/${data.id}`)
     } catch (err) {
       setErro(mensagemErro(err))
@@ -93,9 +97,20 @@ export default function NovoChamado() {
             const sel = categorias.find((c) => String(c.id) === String(f.categoria_id))
             if (!sel?.sla_horas || sel.kanban) return null
             const h = sel.sla_horas
+            if (sel.exige_aprovacao) return <small className="dica">Prazo de atendimento: até {h} {h === 1 ? 'hora útil' : 'horas úteis'} depois da aprovação ({EXPEDIENTE}).</small>
             return <small className="dica">Prazo de atendimento desta categoria: até {h} {h === 1 ? 'hora útil' : 'horas úteis'} ({EXPEDIENTE}).</small>
           })()}
         </label>
+
+        {catSel?.exige_aprovacao && (
+          <div className="alerta alerta-aprovacao">
+            <ShieldCheck size={18} />
+            <div>
+              <strong>Esta solicitação passa pela aprovação da gerência.</strong>
+              <span>Conte na descrição o que precisa e por quê. Depois de aprovada, a TI dá andamento e você é avisado por e-mail.</span>
+            </div>
+          </div>
+        )}
 
         <label className="campo">
           <span>Título <em>*</em></span>
@@ -105,7 +120,7 @@ export default function NovoChamado() {
         <label className="campo">
           <span>Descrição <em>*</em></span>
           <textarea rows={5} value={f.descricao} onChange={set('descricao')} maxLength={10000}
-            placeholder={agente && emNomeDe ? 'Cole aqui o texto do e-mail ou resuma o pedido.' : 'Conte o que aconteceu, desde quando e se aparece alguma mensagem de erro.'} />
+            placeholder={agente && emNomeDe ? 'Cole aqui o texto do e-mail ou resuma o pedido.' : catSel?.exige_aprovacao ? 'O que precisa, quantidade e para que vai ser usado.' : 'Conte o que aconteceu, desde quando e se aparece alguma mensagem de erro.'} />
         </label>
 
         {agente && (
@@ -171,6 +186,14 @@ export default function NovoChamado() {
               <option value="">Nenhum / não se aplica</option>
               {meusAtivos.map((a) => <option key={a.id} value={a.id}>{a.dispositivo}{a.modelo ? ` — ${a.modelo}` : ''}</option>)}
             </select>
+          </label>
+        )}
+
+        {catSel?.exige_aprovacao && (
+          <label className="campo campo-valor">
+            <span>Valor estimado (R$)</span>
+            <input inputMode="decimal" value={f.valor_estimado} onChange={set('valor_estimado')} placeholder="Ex.: 350,00 — se souber" maxLength={15} />
+            <small className="dica">Ajuda na aprovação. Pode deixar em branco.</small>
           </label>
         )}
 

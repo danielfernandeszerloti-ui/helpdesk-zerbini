@@ -14,7 +14,7 @@ export default function MeusChamados() {
   useEffect(() => {
     let vivo = true
     const carregar = () => supabase.from('hd_chamados')
-      .select('id,titulo,status,atualizado_em,criado_em,atribuido_email,lido_solicitante,prazo_sla,etapa_id,categoria:hd_categorias(nome)')
+      .select('id,titulo,status,atualizado_em,criado_em,atribuido_email,lido_solicitante,prazo_sla,etapa_id,aprovacao,categoria:hd_categorias(nome)')
       .eq('solicitante_email', perfil.email).order('atualizado_em', { ascending: false }).limit(500)
       .then(({ data }) => vivo && setLista(data || []))
     carregar()
@@ -63,6 +63,7 @@ export default function MeusChamados() {
                   <span className="codigo">{codigo(c.id)}</span>
                   <StatusBadge status={c.status} />
                   {!c.lido_solicitante && <span className="pilula-nova">Nova atualização</span>}
+                  {c.aprovacao === 'pendente' && emAndamento(c) && <span className="pilula-aprov">Aguardando aprovação</span>}
                 </div>
                 <strong className="item-titulo">{c.titulo}</strong>
                 <div className="item-meta">

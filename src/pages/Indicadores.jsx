@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowUp, ArrowDown, Minus, RefreshCw, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
-import { codigo, nomeDeEmail, duracaoHoras, PRIORIDADE, tempoRelativo, mensagemErro } from '../lib/util'
+import { codigo, nomeDeEmail, duracaoHoras, PRIORIDADE, tempoRelativo, mensagemErro, moeda } from '../lib/util'
 import { LinhasTempo, BarrasH, COR_ABERTOS, COR_CONCLUIDOS } from '../components/graficos'
 import { PrioridadeBadge, StatusBadge } from '../components/ui'
 
@@ -81,6 +81,7 @@ export default function Indicadores() {
   const [periodo, setPeriodo] = useState('30')
   const [cat, setCat] = useState('')
   const [resp, setResp] = useState('')
+  const [tipo, setTipo] = useState('')
   const [dados, setDados] = useState(null)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState('')
@@ -90,7 +91,7 @@ export default function Indicadores() {
 
   async function carregar() {
     setCarregando(true)
-    const { data, error } = await supabase.rpc('hd_dash_chamados', { p_desde: iniAnt.toISOString() })
+    const { data, error } = await supabase.rpc('hd_dash_chamados_v2', { p_desde: iniAnt.toISOString() })
     setCarregando(false)
     if (error) { setErro(mensagemErro(error)); return }
     setErro('')
@@ -100,10 +101,11 @@ export default function Indicadores() {
 
   const lista = useMemo(() => (dados || []).filter((c) => {
     if (cat && String(c.categoria_id) !== cat) return false
+    if (tipo && c.tipo !== tipo) return false
     if (resp === 'ninguem' && c.atribuido_email) return false
     if (resp && resp !== 'ninguem' && c.atribuido_email !== resp) return false
     return true
-  }), [dados, cat, resp])
+  }), [dados, cat, resp, tipo])
 
   const atual = useMemo(() => calcular(lista, ini, fim), [lista, ini, fim])
   const anterior = useMemo(() => calcular(lista, iniAnt, ini), [lista, iniAnt, ini])
@@ -180,6 +182,24 @@ export default function Indicadores() {
     rotulo: PRIORIDADE[p].rotulo, valor: pendentes.filter((c) => c.prioridade === p).length,
   })), [pendentes])
 
+  const porTipo = useMemo(() => [
+    { rotulo: 'Incidentes', valor: atual.abertos.filter((c) => c.tipo === 'incidente').length },
+    { rotulo: 'Solicitações', valor: atual.abertos.filter((c) => c.tipo !== 'incidente').length },
+  ], [atual])
+
+  const aprov = useMemo(() => {
+    const comAprov = lista.filter((c) => c.aprovacao)
+    const decididas = comAprov.filter((c) => c.aprovado_em && entre(c.aprovado_em, ini, fim))
+    const tempos = decididas.map((c) => horas(c.criado_em, c.aprovado_em))
+    return {
+      pendentes: comAprov.filter((c) => c.aprovacao === 'pendente' && !finalizado(c)),
+      aprovadas: decididas.filter((c) => c.aprovacao === 'aprovada'),
+      recusadas: decididas.filter((c) => c.aprovacao === 'recusada'),
+      media: tempos.length ? tempos.reduce((a, b) => a + b, 0) / tempos.length : null,
+      valor: decididas.filter((c) => c.aprovacao === 'aprovada').reduce((s, c) => s + Number(c.valor_estimado || 0), 0),
+    }
+  }, [lista, ini, fim])
+
   const antigos = useMemo(() => [...pendentes].sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em)).slice(0, 6), [pendentes])
 
   return (
@@ -198,6 +218,11 @@ export default function Indicadores() {
             <button key={p.id} role="tab" aria-selected={periodo === p.id} className={periodo === p.id ? 'ativo' : ''} onClick={() => setPeriodo(p.id)}>{p.rotulo}</button>
           ))}
         </div>
+        <select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Tipo">
+          <option value="">Incidentes e solicitações</option>
+          <option value="incidente">Só incidentes</option>
+          <option value="solicitacao">Só solicitações</option>
+        </select>
         <select value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Categoria">
           <option value="">Todas as categorias</option>
           {categorias.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -252,6 +277,23 @@ export default function Indicadores() {
               <h2>Pendentes por prioridade</h2>
               <p className="dash-sub">Chamados em aberto agora</p>
               <BarrasH itens={porPrioridade} vazio="Nenhum chamado pendente" />
+            </section>
+
+            <section className="cartao dash-card">
+              <h2>Incidentes × solicitações</h2>
+              <p className="dash-sub">Abertos no período, pelo tipo do chamado</p>
+              <BarrasH itens={porTipo} />
+            </section>
+
+            <section className="cartao dash-card">
+              <h2>Aprovações da gerência</h2>
+              <p className="dash-sub">Solicitações que exigem aprovação (compras etc.)</p>
+              <dl className="dash-lista">
+                <dt>Aguardando agora</dt><dd className={aprov.pendentes.length ? 'pend-aprov' : ''}>{aprov.pendentes.length}</dd>
+                <dt>Aprovadas no período</dt><dd>{aprov.aprovadas.length}{aprov.valor > 0 && <small> · {moeda(aprov.valor)} estimados</small>}</dd>
+                <dt>Recusadas no período</dt><dd>{aprov.recusadas.length}</dd>
+                <dt>Tempo médio até a decisão</dt><dd>{duracaoHoras(aprov.media)}</dd>
+              </dl>
             </section>
 
             <section className="cartao dash-card">

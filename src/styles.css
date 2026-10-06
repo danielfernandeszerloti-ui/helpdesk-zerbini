@@ -646,3 +646,87 @@ html[data-tema="escuro"] .selo-acao.erro { color: var(--rosa); }
 html[data-tema="escuro"] .aprovacao svg { color: #f5c542; }
 .kb-aprov-dica { display: flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--texto-3); margin-top: 2px; }
 .kb-resumo .destaque { border-color: #e0a100; background: color-mix(in srgb, #f5b800 14%, var(--sup)); }
+
+/* ---------- Hoje ---------- */
+.pagina-hoje { display: grid; gap: 16px; }
+.pagina-hoje .cabecalho-pagina { margin-bottom: 0; }
+.hoje-resumo { display: flex; gap: 10px; flex-wrap: wrap; }
+.hr-item { display: flex; align-items: baseline; gap: 7px; padding: 8px 16px; border-radius: 999px; background: var(--sup); border: 1px solid var(--linha); box-shadow: var(--sombra); color: var(--texto-2); }
+.hr-item strong { font-size: 18px; }
+.hr-item.vermelho strong { color: var(--vermelho); }
+.hr-item.laranja strong { color: var(--laranja); }
+.hr-item.azul strong { color: var(--azul); }
+.hr-item.zero strong { color: var(--texto-3); }
+.hr-item.link { align-items: center; text-decoration: none; margin-left: auto; }
+.hr-item.link:hover { border-color: var(--turquesa); }
+
+.nova-tarefa-hoje { padding: 12px 14px; display: grid; gap: 10px; }
+.nt-linha { display: flex; align-items: center; gap: 10px; }
+.nt-linha input { flex: 1; min-width: 0; border: 0; background: transparent; font-size: 15px; padding: 8px 2px; outline: none; box-shadow: none; }
+.nt-icone { color: var(--roxo); flex: none; }
+.nt-opcoes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-left: 28px; }
+.nt-sep { width: 1px; height: 20px; background: var(--linha); margin: 0 4px; }
+.nt-dica { color: var(--texto-3); margin-left: auto; font-size: 12px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 13px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--linha); background: var(--sup); color: var(--texto-2); cursor: pointer; position: relative; }
+.chip:hover { border-color: var(--borda-forte); }
+.chip.ativo { background: var(--roxo-claro); border-color: var(--roxo); color: var(--roxo); font-weight: 600; }
+.chip-data input[type=date] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.chip-select select { border: 0; background: transparent; font: inherit; color: inherit; padding: 0 2px; cursor: pointer; box-shadow: none; min-height: 0; height: auto; appearance: none; -webkit-appearance: none; }
+
+.grupo-hoje { display: grid; gap: 8px; }
+.gh-titulo { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 4px 2px; cursor: pointer; font: inherit; color: var(--texto); text-align: left; }
+.gh-titulo > i { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-3); }
+.grupo-hoje.cor-vermelho .gh-titulo > i { background: var(--vermelho); }
+.grupo-hoje.cor-laranja .gh-titulo > i { background: var(--laranja); }
+.grupo-hoje.cor-azul .gh-titulo > i { background: var(--azul); }
+.grupo-hoje.cor-verde .gh-titulo > i { background: var(--verde); }
+.gh-titulo small { color: var(--texto-3); font-size: 12px; }
+.gh-titulo svg { color: var(--texto-3); }
+.gh-vazio { margin: 0 0 4px 30px; color: var(--texto-3); font-size: 14px; }
+.lista-hoje { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+.item-hoje { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid var(--linha-2); transition: opacity .25s, background .15s; }
+.item-hoje:last-child { border-bottom: 0; }
+.item-hoje:hover { background: var(--sup-2); }
+.item-hoje.chamado { cursor: pointer; }
+.item-hoje.saindo { opacity: .45; }
+.item-hoje.feita .ih-texto { text-decoration: line-through; color: var(--texto-3); }
+.item-hoje.editando { display: block; background: var(--sup-2); }
+.caixa-hoje { width: 20px; height: 20px; flex: none; border-radius: 50%; border: 2px solid var(--borda-forte); background: var(--sup); display: grid; place-items: center; cursor: pointer; color: #fff; padding: 0; }
+.caixa-hoje:hover { border-color: var(--serie-2); }
+.item-hoje.feita .caixa-hoje, .item-hoje.saindo .caixa-hoje { background: var(--serie-2); border-color: var(--serie-2); }
+.ih-tipo { width: 20px; height: 20px; flex: none; display: grid; place-items: center; color: var(--roxo); }
+.ih-corpo { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.ih-texto { font-weight: 500; overflow-wrap: anywhere; }
+.ih-texto .codigo { margin-right: 4px; }
+.ih-alta { color: var(--vermelho); margin-right: 5px; vertical-align: -1px; }
+.ih-meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--texto-3); align-items: center; }
+.ih-meta > span { display: inline-flex; align-items: center; gap: 4px; }
+.ih-prazo { font-weight: 600; color: var(--texto-2); }
+.ih-prazo.atrasado { color: var(--vermelho); }
+.ih-chamado { display: inline-flex; align-items: center; gap: 4px; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--roxo); text-decoration: none; }
+.ih-chamado:hover { text-decoration: underline; }
+.ih-notas { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block !important; }
+.ih-acoes { display: flex; gap: 2px; opacity: .55; }
+.item-hoje:hover .ih-acoes, .ih-acoes:focus-within { opacity: 1; }
+.editor-tarefa { display: grid; gap: 10px; }
+.editor-tarefa > input { font-weight: 600; }
+.et-grade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.et-grade .campo { margin: 0; }
+.et-botoes { display: flex; gap: 8px; align-items: center; }
+.et-botoes > span { flex: 1; }
+.hoje-rodape { margin-top: 4px; }
+html[data-tema="escuro"] .chip.ativo { background: color-mix(in srgb, var(--serie-1) 22%, transparent); color: #c9d0ff; border-color: var(--serie-1); }
+html[data-tema="escuro"] .ih-chamado { color: #a9b4ff; }
+@media (max-width: 640px) {
+  .et-grade { grid-template-columns: 1fr 1fr; }
+  .nt-opcoes { padding-left: 0; }
+  .nt-dica { display: none; }
+  .hr-item.link { margin-left: 0; }
+  .ih-acoes { opacity: 1; }
+}
+.tarefa-prazo-linha { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; color: var(--texto-3); }
+.tarefa-prazo-linha label { display: inline-flex; align-items: center; gap: 4px; }
+.tarefa-prazo-linha input { width: auto; padding: 4px 8px; min-height: 0; font-size: 13px; }
+.checklist li > span { flex: 1; min-width: 0; }
+.checklist li .sub { display: block; font-size: 11.5px; color: var(--texto-3); }
+.tarefa-dica { margin: 8px 0 0; font-size: 12px; color: var(--texto-3); }

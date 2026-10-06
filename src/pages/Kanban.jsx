@@ -211,7 +211,7 @@ export default function Kanban() {
     if (atual.etapa_id === etapaAprov && etapaDestino !== etapaAprov && etapaDestino !== etapaFinal &&
         !window.confirm(`Aprovar ${codigo(id)}? O dev e ${atual.solicitante_nome || 'o solicitante'} serão avisados por e-mail.`)) return
     if (etapaDestino === etapaFinal && atual.etapa_id !== etapaFinal &&
-        !window.confirm(`Mover ${codigo(id)} para "Concluído" finaliza o chamado e avisa ${atual.solicitante_nome || 'o solicitante'} por e-mail. Continuar?`)) return
+        !window.confirm(`${(() => { const n = (tarefasPor[id] || []).filter((t) => !t.feita).length; return n ? `${codigo(id)} tem ${n} tarefa${n > 1 ? 's' : ''} do checklist em aberto.\n\n` : '' })()}Mover ${codigo(id)} para "Concluído" finaliza o chamado e avisa ${atual.solicitante_nome || 'o solicitante'} por e-mail. Continuar?`)) return
 
     const anterior = chamados
     setChamados(chamados.map((c) => (c.id === id ? { ...c, etapa_id: etapaDestino, kanban_ordem: novaOrdem } : c)))

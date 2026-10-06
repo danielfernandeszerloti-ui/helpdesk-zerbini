@@ -54,6 +54,13 @@ Em **Equipe → Aprova projetos**, um administrador também pode receber os proj
 - Cada cartão tem previsão de entrega (alerta de atraso), checklist e histórico de etapas; o quadro mostra o tempo médio em cada etapa (últimos 180 dias).
 - O solicitante vê o andamento no chamado e recebe e-mail a cada mudança de etapa.
 
+### Hoje e tarefas
+A aba **Hoje** é a página inicial da TI: uma fila única do dia com as suas tarefas e os chamados atribuídos a você (pelo prazo de SLA), em **Atrasadas · Hoje · Próximas (7 dias) · Mais adiante · Sem data · Concluídas (7 dias)**.
+- Criação rápida: digite a tarefa, escolha Hoje/Amanhã/Data/Sem data e, se quiser, **Repetir** (todo dia, dias úteis, semanal, mensal). Ao concluir uma recorrente, a próxima é criada sozinha.
+- `#0018` no texto liga a tarefa ao chamado. No chamado, o cartão **Tarefas** cria tarefas já ligadas; concluir registra uma nota interna no histórico.
+- Finalizar um chamado (ou mover o projeto para Concluído) com tarefas abertas pede confirmação.
+- Tarefas avulsas são pessoais (só quem criou e o responsável veem). Tarefas de chamado são vistas por quem atende o chamado. O checklist dos projetos do Kanban usa as mesmas tarefas.
+
 ### Indicadores
 Aba **Indicadores** (TI/admin): SLA cumprido, abertos × concluídos, pendentes, tempo médio de 1ª resposta e de resolução (com mediana e comparação com o período anterior), pendentes por idade/prioridade, abertos por setor, tabelas por categoria e por responsável e os pendentes mais antigos. Filtros de período, categoria e responsável.
 - **SLA cumprido** = concluídos no período com prazo de SLA que foram resolvidos dentro do prazo.

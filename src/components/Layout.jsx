@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, Moon, Sun, CircleHelp } from 'lucide-react'
+import { LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, ListTodo, Moon, Sun, CircleHelp } from 'lucide-react'
 import { useTema } from '../lib/tema'
 import { useSessao } from '../lib/sessao'
 import { nomeDeEmail } from '../lib/util'
@@ -37,6 +37,7 @@ export default function Layout() {
       </header>
       <nav className="abas">
         <div className="abas-interno">
+          {(perfil.eh_agente || perfil.eh_dev) && <NavLink to="/hoje"><ListTodo size={17} /> Hoje</NavLink>}
           {perfil.eh_agente && <NavLink to="/painel"><LayoutDashboard size={17} /> Painel</NavLink>}
           {perfil.eh_agente && <NavLink to="/indicadores"><BarChart3 size={17} /> Indicadores</NavLink>}
           {(perfil.eh_agente || perfil.eh_dev) && <NavLink to="/kanban"><KanbanSquare size={17} /> Desenvolvimento</NavLink>}

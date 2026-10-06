@@ -203,7 +203,12 @@ function ItemChamado({ c, grupo }) {
         <span className="ih-meta">
           <span className={'ih-prazo' + (grupo === 'atrasadas' ? ' atrasado' : '')}>{vence}</span>
           <span>{c.solicitante_nome || nomeDeEmail(c.solicitante_email)}</span>
-          {!c.lido_agente && <span className="pilula-nova">Nova resposta</span>}
+          {!c.lido_agente && (
+            // só é "Nova resposta" se o solicitante escreveu algo depois de abrir o chamado
+            (c.msgs || []).some((m) => m.tipo === 'mensagem' && m.autor_email === c.solicitante_email)
+              ? <span className="pilula-nova">Nova resposta</span>
+              : <span className="pilula-nova">Não lido</span>
+          )}
         </span>
       </div>
       <StatusBadge status={c.status} />
@@ -230,7 +235,7 @@ export default function Hoje() {
       supabase.from('hd_tarefas').select('*, chamado:hd_chamados(id,titulo,status)')
         .eq('responsavel_email', perfil.email).or(`feita.eq.false,feita_em.gte.${desde}`)
         .order('prazo', { ascending: true, nullsFirst: false }).order('prazo_hora', { ascending: true, nullsFirst: false }).order('ordem').limit(500),
-      supabase.from('hd_chamados').select('id,titulo,status,prazo_sla,solicitante_nome,solicitante_email,lido_agente,etapa_id')
+      supabase.from('hd_chamados').select('id,titulo,status,prazo_sla,solicitante_nome,solicitante_email,lido_agente,etapa_id,msgs:hd_mensagens(autor_email,tipo)')
         .eq('atribuido_email', perfil.email).in('status', ['novo', 'aberto']).limit(300),
       perfil.eh_agente
         ? supabase.from('hd_chamados').select('id', { count: 'exact', head: true }).is('atribuido_email', null).in('status', ['novo', 'aberto'])

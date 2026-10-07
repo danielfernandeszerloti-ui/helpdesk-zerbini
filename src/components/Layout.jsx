@@ -1,13 +1,15 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, ListTodo, Moon, Sun, CircleHelp } from 'lucide-react'
+import { Bell, BellOff, LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, ListTodo, Moon, Sun, CircleHelp } from 'lucide-react'
 import { useTema } from '../lib/tema'
+import { useAlertas } from '../lib/alertas'
 import { useSessao } from '../lib/sessao'
 import { nomeDeEmail } from '../lib/util'
 import { Avatar } from './ui'
 
 export default function Layout() {
-  const { perfil, sair } = useSessao()
+  const { perfil, sair, avisar } = useSessao()
   const [tema, alternarTema] = useTema()
+  const alertas = useAlertas(perfil)
   const nome = perfil.nome || nomeDeEmail(perfil.email)
   return (
     <div className="app">
@@ -25,6 +27,14 @@ export default function Layout() {
             <a href="/passo-a-passo.pdf" target="_blank" rel="noopener" className="btn-ajuda" title="Passo a passo: como abrir e acompanhar chamados">
               <CircleHelp size={18} /> <span>Como usar</span>
             </a>
+            {alertas.equipe && (
+              <button className={'btn-icone btn-sino' + (alertas.ligado ? '' : ' desligado') + (alertas.ligado && alertas.semPermissao ? ' pendente' : '')}
+                onClick={() => { const r = alertas.alternar(); avisar(r ? (alertas.semPermissao ? 'Som ligado. Permita as notificações do navegador para ver avisos com a aba em segundo plano.' : 'Som de novos chamados ligado') : 'Som de novos chamados desligado') }}
+                title={alertas.ligado ? (alertas.semPermissao ? 'Som ligado — clique para permitir também as notificações do Windows' : 'Som de novos chamados ligado (clique para desligar)') : 'Som de novos chamados desligado (clique para ligar)'}
+                aria-label={alertas.ligado ? 'Desligar som de novos chamados' : 'Ligar som de novos chamados'}>
+                {alertas.ligado ? <Bell size={18} /> : <BellOff size={18} />}
+              </button>
+            )}
             <button className="btn-icone btn-tema" onClick={alternarTema}
               title={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'} aria-label={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'}>
               {tema === 'escuro' ? <Sun size={18} /> : <Moon size={18} />}

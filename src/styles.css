@@ -775,3 +775,6 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .tabela-colada tr:nth-child(even) td { background: var(--sup-2); }
 .corpo .texto-bloco { white-space: pre-wrap; }
 .miniatura-arquivo { width: 34px; height: 34px; object-fit: cover; border-radius: 5px; border: 1px solid var(--linha); flex: none; }
+.btn-sino { position: relative; }
+.btn-sino.desligado { color: var(--texto-3); }
+.btn-sino.pendente::after { content: ''; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); }

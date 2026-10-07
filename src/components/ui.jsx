@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Paperclip, Upload, X, FileText } from 'lucide-react'
 import { STATUS, PRIORIDADE, TIPOS, iniciais, tamanhoLegivel, LIMITE_ARQUIVO, situacaoSla, dataHora } from '../lib/util'
 
@@ -36,14 +36,7 @@ export function SeletorArquivos({ arquivos, setArquivos, compacto, onErro }) {
   const input = useRef(null)
   const [arrastando, setArrastando] = useState(false)
 
-  const adicionar = (lista) => {
-    const novos = []
-    for (const f of lista) {
-      if (f.size > LIMITE_ARQUIVO && !f.type.startsWith('image/')) { onErro?.(`"${f.name}" passa de 10 MB`); continue }
-      novos.push(f)
-    }
-    setArquivos([...arquivos, ...novos].slice(0, 10))
-  }
+  const adicionar = (lista) => adicionarArquivos(lista, setArquivos, onErro)
 
   return (
     <div className={compacto ? 'seletor-compacto' : undefined}>
@@ -71,7 +64,7 @@ export function SeletorArquivos({ arquivos, setArquivos, compacto, onErro }) {
         <ul className="lista-arquivos">
           {arquivos.map((f, i) => (
             <li key={i}>
-              <FileText size={15} />
+              <MiniaturaArquivo arquivo={f} />
               <span className="nome-arquivo">{f.name}</span>
               <small>{tamanhoLegivel(f.size)}</small>
               <button type="button" className="btn-icone" aria-label="Remover" onClick={() => setArquivos(arquivos.filter((_, j) => j !== i))}><X size={15} /></button>
@@ -81,6 +74,59 @@ export function SeletorArquivos({ arquivos, setArquivos, compacto, onErro }) {
       )}
     </div>
   )
+}
+
+// valida e junta arquivos à lista (máx. 10)
+export function adicionarArquivos(lista, setArquivos, onErro) {
+  const novos = []
+  for (const f of lista) {
+    if (f.size > LIMITE_ARQUIVO && !f.type.startsWith('image/')) { onErro?.(`"${f.name}" passa de 10 MB`); continue }
+    novos.push(f)
+  }
+  if (novos.length) setArquivos((atuais) => [...atuais, ...novos].slice(0, 10))
+  return novos.length
+}
+
+// Ctrl+V / arrastar no campo de texto: prints e arquivos viram anexo.
+// Se a área de transferência também tiver texto (ex.: células do Excel), o texto tem prioridade.
+export function arquivosDoEvento(e, tipo = 'colar') {
+  const dt = tipo === 'colar' ? e.clipboardData : e.dataTransfer
+  if (!dt) return []
+  let arquivos = [...(dt.files || [])]
+  if (!arquivos.length && dt.items) arquivos = [...dt.items].filter((i) => i.kind === 'file').map((i) => i.getAsFile()).filter(Boolean)
+  if (!arquivos.length) return []
+  if (tipo === 'colar' && (dt.getData('text/plain') || '').trim()) return []
+  e.preventDefault()
+  const agora = new Date()
+  const p = (n) => String(n).padStart(2, '0')
+  const carimbo = `${agora.getFullYear()}${p(agora.getMonth() + 1)}${p(agora.getDate())}-${p(agora.getHours())}${p(agora.getMinutes())}${p(agora.getSeconds())}`
+  return arquivos.map((f, i) => {
+    if (f.type.startsWith('image/') && (!f.name || /^image\.(png|jpe?g|gif|bmp|webp)$/i.test(f.name))) {
+      const ext = (f.type.split('/')[1] || 'png').replace('jpeg', 'jpg')
+      return new File([f], `print-${carimbo}${arquivos.length > 1 ? '-' + (i + 1) : ''}.${ext}`, { type: f.type })
+    }
+    return f
+  })
+}
+
+// handlers prontos para um <textarea>
+export function colarArquivos(setArquivos, onErro, onOk) {
+  const tratar = (tipo) => (e) => {
+    const fs = arquivosDoEvento(e, tipo)
+    if (fs.length && adicionarArquivos(fs, setArquivos, onErro)) onOk?.(fs.length === 1 ? `"${fs[0].name}" anexado` : `${fs.length} arquivos anexados`)
+  }
+  return { onPaste: tratar('colar'), onDrop: tratar('soltar') }
+}
+
+function MiniaturaArquivo({ arquivo }) {
+  const [url, setUrl] = useState(null)
+  useEffect(() => {
+    if (!arquivo.type?.startsWith('image/')) return
+    const u = URL.createObjectURL(arquivo)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [arquivo])
+  return url ? <img src={url} alt="" className="miniatura-arquivo" /> : <FileText size={15} />
 }
 
 export function Vazio({ icone: Icone, titulo, children }) {

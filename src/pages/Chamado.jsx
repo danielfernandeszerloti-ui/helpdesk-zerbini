@@ -10,7 +10,7 @@ import {
   TIPOS, moeda,
 } from '../lib/util'
 import { hojeISO, rotuloPrazo } from '../lib/tarefas'
-import { TextoChamado, TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
+import { TextoChamado, TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos, colarArquivos } from '../components/ui'
 
 const VIA = { email: 'por e-mail', telefone: 'por telefone', teams: 'pelo Teams', whatsapp: 'pelo WhatsApp', presencial: 'pessoalmente' }
 
@@ -443,8 +443,8 @@ export default function Chamado() {
 
           {podeResponder && (
             <form className={'cartao resposta' + (interna && !doSolicitante ? ' interna' : '')} onSubmit={responder}>
-              <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)}
-                placeholder={doSolicitante ? `Cole aqui a resposta que ${nomeSolicitante.split(' ')[0]} enviou por e-mail…` : interna ? 'Nota interna — só a equipe vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI…'}
+              <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} {...colarArquivos(setArquivos, erro, (m) => avisar(m))}
+                placeholder={doSolicitante ? `Cole aqui a resposta que ${nomeSolicitante.split(' ')[0]} enviou por e-mail…` : interna ? 'Nota interna — só a equipe vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI… (Ctrl+V cola prints e arquivos)'}
                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) responder(e) }} />
               <div className="resposta-rodape">
                 <SeletorArquivos compacto arquivos={arquivos} setArquivos={setArquivos} onErro={erro} />

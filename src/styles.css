@@ -774,3 +774,4 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .tabela-colada tr:last-child td { border-bottom: 0; }
 .tabela-colada tr:nth-child(even) td { background: var(--sup-2); }
 .corpo .texto-bloco { white-space: pre-wrap; }
+.miniatura-arquivo { width: 34px; height: 34px; object-fit: cover; border-radius: 5px; border: 1px solid var(--linha); flex: none; }

@@ -5,7 +5,7 @@ import { useSessao } from '../lib/sessao'
 import { Mail } from 'lucide-react'
 import { enviarAnexos, mensagemErro, nomeDeEmail, EXPEDIENTE, ORIGENS, agoraLocal } from '../lib/util'
 import { ShieldCheck } from 'lucide-react'
-import { SeletorArquivos } from '../components/ui'
+import { SeletorArquivos, colarArquivos } from '../components/ui'
 
 export default function NovoChamado() {
   const { perfil, categorias, avisar } = useSessao()
@@ -119,8 +119,9 @@ export default function NovoChamado() {
 
         <label className="campo">
           <span>Descrição <em>*</em></span>
-          <textarea rows={5} value={f.descricao} onChange={set('descricao')} maxLength={10000}
+          <textarea rows={5} value={f.descricao} onChange={set('descricao')} maxLength={10000} {...colarArquivos(setArquivos, setErro, (m) => avisar(m))}
             placeholder={agente && emNomeDe ? 'Cole aqui o texto do e-mail ou resuma o pedido.' : catSel?.exige_aprovacao ? 'O que precisa, quantidade e para que vai ser usado.' : 'Conte o que aconteceu, desde quando e se aparece alguma mensagem de erro.'} />
+          <small className="dica">Dica: cole prints e arquivos direto aqui com <b>Ctrl+V</b>.</small>
         </label>
 
         {agente && (

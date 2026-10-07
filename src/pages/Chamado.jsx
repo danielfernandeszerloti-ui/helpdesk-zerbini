@@ -10,7 +10,7 @@ import {
   TIPOS, moeda,
 } from '../lib/util'
 import { hojeISO, rotuloPrazo } from '../lib/tarefas'
-import { TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
+import { TextoChamado, TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos } from '../components/ui'
 
 const VIA = { email: 'por e-mail', telefone: 'por telefone', teams: 'pelo Teams', whatsapp: 'pelo WhatsApp', presencial: 'pessoalmente' }
 
@@ -409,7 +409,7 @@ export default function Chamado() {
                 </small>
               </div>
             </header>
-            <div className="corpo">{chamado.descricao}</div>
+            <TextoChamado texto={chamado.descricao} />
             <ListaAnexos anexos={anexosPorMensagem.inicio || []} onErro={erro} />
           </article>
 
@@ -432,7 +432,7 @@ export default function Chamado() {
                 </div>
                 {m.interna && <span className="tag-interna"><Lock size={12} /> Nota interna</span>}
               </header>
-              <div className="corpo">{m.corpo}</div>
+              <TextoChamado texto={m.corpo} />
               <ListaAnexos anexos={anexosPorMensagem[m.id] || []} onErro={erro} />
             </article>
           ))}

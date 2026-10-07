@@ -765,3 +765,12 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .config-conteudo .tabela-edicao input[type=number] { width: 84px; }
 .config-conteudo .tabela-edicao select { min-width: 132px; }
 .pagina-config { max-width: 1120px; }
+
+/* Trechos colados do Excel */
+.tabela-colada { overflow-x: auto; margin: 8px 0; width: fit-content; border: 1px solid var(--linha); border-radius: 8px; max-width: 100%; }
+.tabela-colada table { border-collapse: collapse; font-size: 13.5px; white-space: nowrap; }
+.tabela-colada td { padding: 6px 12px; border-bottom: 1px solid var(--linha-2); border-right: 1px solid var(--linha-2); font-variant-numeric: tabular-nums; }
+.tabela-colada td:last-child { border-right: 0; }
+.tabela-colada tr:last-child td { border-bottom: 0; }
+.tabela-colada tr:nth-child(even) td { background: var(--sup-2); }
+.corpo .texto-bloco { white-space: pre-wrap; }

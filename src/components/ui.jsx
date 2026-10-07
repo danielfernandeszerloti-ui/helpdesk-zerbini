@@ -92,3 +92,52 @@ export function Vazio({ icone: Icone, titulo, children }) {
     </div>
   )
 }
+
+// Texto do chamado/mensagem: trechos colados do Excel (colunas separadas por TAB) viram tabela
+function separarBlocos(texto) {
+  const linhas = String(texto || '').replace(/\r\n?/g, '\n').split('\n')
+  const blocos = []
+  let i = 0
+  while (i < linhas.length) {
+    if (linhas[i].includes('\t')) {
+      const ini = i
+      while (i < linhas.length && linhas[i].includes('\t')) i++
+      const grupo = linhas.slice(ini, i)
+      // 1 linha só vira tabela se tiver pelo menos 3 colunas
+      if (grupo.length >= 2 || grupo[0].split('\t').length >= 3) { blocos.push({ tabela: grupo.map((l) => l.split('\t').map((c) => c.trim())) }); continue }
+      blocos.push({ texto: grupo.join('\n') })
+      continue
+    }
+    const ini = i
+    while (i < linhas.length && !linhas[i].includes('\t')) i++
+    blocos.push({ texto: linhas.slice(ini, i).join('\n') })
+  }
+  return blocos
+}
+
+export function TextoChamado({ texto, className = 'corpo' }) {
+  const blocos = separarBlocos(texto)
+  if (!blocos.some((b) => b.tabela)) return <div className={className}>{texto}</div>
+  return (
+    <div className={className}>
+      {blocos.map((b, i) => b.tabela ? (
+        <div key={i} className="tabela-colada">
+          <table>
+            <tbody>
+              {b.tabela.map((linha, j) => {
+                const cols = Math.max(...b.tabela.map((l) => l.length))
+                return (
+                  <tr key={j}>
+                    {Array.from({ length: cols }, (_, k) => <td key={k}>{linha[k] ?? ''}</td>)}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        b.texto.replace(/^\n+|\n+$/g, '') && <div key={i} className="texto-bloco">{b.texto.replace(/^\n+|\n+$/g, '')}</div>
+      ))}
+    </div>
+  )
+}

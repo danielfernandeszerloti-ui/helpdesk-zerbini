@@ -1,0 +1,4 @@
+-- Já aplicado no projeto.
+-- hd_texto_html(text): escapa o texto e transforma linhas com TAB (colado do Excel) em tabela HTML.
+-- hd_email_html_v2 passa a usar hd_texto_html no corpo dos e-mails.
+-- (Na tela, o componente TextoChamado faz o mesmo com a descrição e as mensagens.)

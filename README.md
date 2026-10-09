@@ -122,7 +122,7 @@ As migrações estão em `supabase/migrations/` (já aplicadas no projeto):
 | TI (admin/editor) | ver todos, mudar status/prioridade/responsável/categoria/SLA, notas internas, vincular equipamento |
 | Admin | excluir chamado |
 
-- Resposta do colaborador em chamado **Em espera** ou **Resolvido** volta para **Aberto**.
+- Resposta do colaborador em chamado **Em espera** volta para **Aberto**. Em chamado **Resolvido**, o colaborador vê *Ficou tudo certo?* com **Sim, resolveu** (registra a confirmação) ou **Não, reabrir chamado**. Um simples "Obrigado" (inclusive por e-mail) fica no histórico sem reabrir e sem avisar a TI.
 - Primeira resposta da TI em chamado **Novo** muda para **Aberto**.
 - O prazo de SLA vem das horas configuradas na categoria (tela *Categorias*).
 - Imagens acima de 800 KB são reduzidas no navegador antes do envio.

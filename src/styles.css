@@ -778,3 +778,9 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .btn-sino { position: relative; }
 .btn-sino.desligado { color: var(--texto-3); }
 .btn-sino.pendente::after { content: ''; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--rosa); }
+.confirmar-resolucao { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px 18px; border-left: 4px solid var(--serie-2); }
+.confirmar-resolucao > svg { color: var(--serie-2); flex: none; }
+.confirmar-resolucao > div:first-of-type { flex: 1; min-width: 220px; display: grid; gap: 2px; }
+.confirmar-resolucao small { color: var(--texto-2); }
+.confirmar-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.alerta-aviso { background: color-mix(in srgb, #f5b800 12%, var(--sup)); border: 1px solid #e8c766; color: var(--texto); }

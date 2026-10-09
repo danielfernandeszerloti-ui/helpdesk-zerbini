@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check, ThumbsUp, ThumbsDown, Hourglass } from 'lucide-react'
+import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check, ThumbsUp, ThumbsDown, Hourglass, CheckCircle2 } from 'lucide-react'
 import { supabase, BUCKET } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
@@ -232,6 +232,7 @@ export default function Chamado() {
   const [texto, setTexto] = useState('')
   const [interna, setInterna] = useState(false)
   const [doSolicitante, setDoSolicitante] = useState(false)
+  const [reabrindo, setReabrindo] = useState(false)
   const [novoStatus, setNovoStatus] = useState('')
   const [arquivos, setArquivos] = useState([])
   const [enviando, setEnviando] = useState(false)
@@ -307,7 +308,9 @@ export default function Chamado() {
   const souSolicitante = chamado.solicitante_email === perfil.email
   const nomeSolicitante = chamado.solicitante_nome || nomeDeEmail(chamado.solicitante_email)
   const ativo = ativos.find((a) => a.id === chamado.ativo_id)
-  const podeResponder = agente || chamado.status !== 'cancelado'
+  const confirmando = chamado.status === 'resolvido' && souSolicitante && !agente
+  const podeResponder = (agente || chamado.status !== 'cancelado') && (!confirmando || reabrindo)
+  const jaConfirmou = mensagens.some((m) => m.tipo === 'evento' && /confirmou que o problema foi resolvido/.test(m.corpo) && (!chamado.resolvido_em || m.criado_em >= chamado.resolvido_em))
   const erro = (m) => avisar(m, 'erro')
   const abertas = tarefas.filter((t) => !t.feita)
   const confirmarFinal = (msg) => window.confirm(
@@ -331,7 +334,7 @@ export default function Chamado() {
     try {
       const corpo = texto.trim() || (arquivos.length === 1 ? 'Anexo enviado' : `${arquivos.length} anexos enviados`)
       const { data, error } = await supabase.from('hd_mensagens')
-        .insert({ chamado_id: chamadoId, corpo, interna: agente && interna && !doSolicitante, do_solicitante: agente && doSolicitante })
+        .insert({ chamado_id: chamadoId, corpo, interna: agente && interna && !doSolicitante, do_solicitante: agente && doSolicitante, ...(confirmando && reabrindo ? { reabrir: true } : {}) })
         .select('id').single()
       if (error) throw error
       if (arquivos.length) await enviarAnexos(chamadoId, arquivos, data.id)
@@ -339,7 +342,7 @@ export default function Chamado() {
         const { error: e2 } = await supabase.from('hd_chamados').update({ status: novoStatus }).eq('id', chamadoId)
         if (e2) throw e2
       }
-      setTexto(''); setArquivos([]); setNovoStatus(''); setInterna(false); setDoSolicitante(false)
+      setTexto(''); setArquivos([]); setNovoStatus(''); setInterna(false); setDoSolicitante(false); setReabrindo(false)
       avisar(doSolicitante ? 'Resposta do solicitante registrada' : interna ? 'Nota interna salva' : 'Resposta enviada')
       carregar()
     } catch (err) {
@@ -437,8 +440,28 @@ export default function Chamado() {
             </article>
           ))}
 
-          {chamado.status === 'resolvido' && souSolicitante && (
-            <div className="alerta alerta-ok">Chamado resolvido. Se o problema voltar, responda abaixo que ele é reaberto.</div>
+          {confirmando && !reabrindo && (
+            <div className="cartao confirmar-resolucao">
+              <CheckCircle2 size={22} />
+              <div>
+                <strong>{jaConfirmou ? 'Obrigado pela confirmação!' : 'Seu chamado foi resolvido. Ficou tudo certo?'}</strong>
+                <small>{jaConfirmou ? 'Se o problema voltar, é só reabrir o chamado.' : 'Se ainda tiver algum problema, reabra que a TI volta a atender.'}</small>
+              </div>
+              <div className="confirmar-botoes">
+                {!jaConfirmou && (
+                  <button className="btn btn-sucesso" onClick={async () => {
+                    const { error } = await supabase.rpc('hd_confirmar_resolucao', { p_id: chamadoId })
+                    if (error) return erro(mensagemErro(error))
+                    avisar('Obrigado! A TI foi avisada que está tudo certo.')
+                    carregar()
+                  }}><ThumbsUp size={16} /> Sim, resolveu</button>
+                )}
+                <button className="btn btn-leve" onClick={() => setReabrindo(true)}>Não, reabrir chamado</button>
+              </div>
+            </div>
+          )}
+          {confirmando && reabrindo && (
+            <div className="alerta alerta-aviso">Conte o que ainda está acontecendo. Ao enviar, o chamado é reaberto. <button className="btn-link" onClick={() => setReabrindo(false)}>Cancelar</button></div>
           )}
 
           {podeResponder && (

@@ -81,8 +81,8 @@ export function useAlertas(perfil) {
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'hd_mensagens' }, async ({ new: m }) => {
         if (!m || m.tipo !== 'mensagem' || m.interna || m.registrado_por || m.autor_email === perfil.email) return
-        const { data: c } = await supabase.from('hd_chamados').select('id,titulo,solicitante_email,solicitante_nome,atribuido_email').eq('id', m.chamado_id).maybeSingle()
-        if (!c || m.autor_email !== c.solicitante_email) return
+        const { data: c } = await supabase.from('hd_chamados').select('id,titulo,status,solicitante_email,solicitante_nome,atribuido_email').eq('id', m.chamado_id).maybeSingle()
+        if (!c || m.autor_email !== c.solicitante_email || ['resolvido', 'cancelado'].includes(c.status)) return
         if (c.atribuido_email && c.atribuido_email !== perfil.email) return
         alertar('resposta', c, String(m.id))
       })

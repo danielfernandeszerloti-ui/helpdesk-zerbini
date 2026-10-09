@@ -161,10 +161,11 @@ export default function Indicadores() {
     const m = {}
     for (const c of lista) {
       const k = c.atribuido_email || ''
-      m[k] ||= { email: k, recebidos: 0, concluidos: 0, pendentes: 0, tempos: [], comSla: 0, noPrazo: 0, notas: [] }
+      m[k] ||= { email: k, recebidos: 0, concluidos: 0, pendentes: 0, cancelados: 0, tempos: [], comSla: 0, noPrazo: 0, notas: [] }
       const g = m[k]
       if (c.avaliacao && c.avaliado_em && entre(c.avaliado_em, ini, fim)) g.notas.push(c.avaliacao)
       if (entre(c.criado_em, ini, fim)) g.recebidos++
+      if (c.status === 'cancelado' && entre(c.criado_em, ini, fim)) g.cancelados++
       if (!finalizado(c)) g.pendentes++
       if (c.status === 'resolvido' && entre(c.resolvido_em, ini, fim)) {
         g.concluidos++; g.tempos.push(horas(c.criado_em, c.resolvido_em))
@@ -365,7 +366,7 @@ export default function Indicadores() {
               <h2>Por responsável</h2>
               <div className="tabela-rolagem">
                 <table className="tabela tabela-dash">
-                  <thead><tr><th>Responsável</th><th>Recebidos</th><th>Concluídos</th><th>Pendentes</th><th>Resolução média</th><th>SLA cumprido</th><th>Avaliação</th></tr></thead>
+                  <thead><tr><th>Responsável</th><th>Recebidos</th><th>Concluídos</th><th>Pendentes</th><th title="Recebidos no período que foram cancelados">Cancelados</th><th>Resolução média</th><th>SLA cumprido</th><th>Avaliação</th></tr></thead>
                   <tbody>
                     {porResponsavel.map((g) => (
                       <tr key={g.email || 'ninguem'}>
@@ -373,12 +374,13 @@ export default function Indicadores() {
                         <td>{g.recebidos}</td>
                         <td>{g.concluidos}</td>
                         <td>{g.pendentes}</td>
+                        <td>{g.cancelados || <span className="texto-suave">0</span>}</td>
                         <td>{duracaoHoras(media(g.tempos))}</td>
                         <td>{g.comSla ? `${pct(g.noPrazo, g.comSla)}%` : <span className="texto-suave">sem SLA</span>}</td>
                         <td>{g.notas.length ? <><span className="estrela-unica">★</span> {(g.notas.reduce((a, b) => a + b, 0) / g.notas.length).toFixed(1).replace('.', ',')} <small className="texto-suave">({g.notas.length})</small></> : <span className="texto-suave">—</span>}</td>
                       </tr>
                     ))}
-                    {!porResponsavel.length && <tr><td colSpan={7} className="texto-suave">Sem chamados no período</td></tr>}
+                    {!porResponsavel.length && <tr><td colSpan={8} className="texto-suave">Sem chamados no período</td></tr>}
                   </tbody>
                 </table>
               </div>

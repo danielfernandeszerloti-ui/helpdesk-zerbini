@@ -159,6 +159,12 @@ As fotos de perfil vêm do Microsoft 365 (as mesmas do Teams) via Microsoft Grap
 
 Requer um app registrado no Entra ID (inquilino único) com a permissão de **aplicativo** `User.Read.All` e consentimento do administrador, e na Vercel: `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET` (o segredo vence — renove no Entra e atualize a variável) e `SUPABASE_SECRET_KEY`.
 
+### Login
+- Padrão: **código por e-mail** (sem senha).
+- Opcional: **senha**. Quem quiser cria em *Minha conta* (clicando no próprio nome no topo), já logado pelo código. Regras: 10+ caracteres, maiúscula, minúscula, número e símbolo, sem palavras óbvias, nome/e-mail ou sequências. Na tela de entrada: *Prefiro entrar com senha*. Esqueceu? Entra com o código e cria outra.
+- Após 5 senhas erradas em 15 min, o navegador bloqueia por 5 min (além do limite do próprio Supabase).
+- Reforço no servidor (recomendado, vale também para a Gestão de Ativos): Supabase → Authentication → Providers → Email → *Minimum password length* 10 e *Password requirements* "Lowercase, uppercase letters, digits and symbols".
+
 ### Atendimento e aparência
 - **Configurações → Equipe → Atende chamados**: define quem aparece em "Atribuído a" e recebe e-mail de chamado novo. Quem não atende (ex.: gestores) continua vendo tudo.
 - **Atribuir novos chamados automaticamente a**: responsável padrão dos chamados novos fora do Kanban (`hd_config.responsavel_padrao`).

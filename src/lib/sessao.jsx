@@ -10,6 +10,7 @@ export function SessaoProvider({ children }) {
   const [categorias, setCategorias] = useState([])
   const [etapas, setEtapas] = useState([])
   const [equipe, setEquipe] = useState([]) // [{email, papel, nome, ativo}]
+  const [fotos, setFotos] = useState({}) // email → url (fotos do Teams)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -45,6 +46,8 @@ export function SessaoProvider({ children }) {
       carregarCategorias()
       carregarEtapas()
       if (data.eh_agente || data.eh_dev) carregarEquipe()
+      supabase.from('hd_fotos').select('email,url').limit(5000)
+        .then(({ data: f }) => ativo && setFotos(Object.fromEntries((f || []).map((x) => [x.email, x.url]))))
     })()
     return () => { ativo = false }
   }, [email, carregarCategorias, carregarEtapas, carregarEquipe])
@@ -63,7 +66,7 @@ export function SessaoProvider({ children }) {
   return (
     <Ctx.Provider value={{
       sessao, perfil, categorias, carregarCategorias, etapas, carregarEtapas,
-      equipe, carregarEquipe, agentes, responsaveis, avisar, sair,
+      equipe, carregarEquipe, agentes, responsaveis, avisar, sair, fotos,
     }}>
       {children}
       {toast && <div className={`toast toast-${toast.tipo}`} role="status">{toast.texto}</div>}

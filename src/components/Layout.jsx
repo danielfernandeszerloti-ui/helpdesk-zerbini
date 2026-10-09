@@ -39,7 +39,7 @@ export default function Layout() {
               title={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'} aria-label={tema === 'escuro' ? 'Usar tema claro' : 'Usar tema escuro'}>
               {tema === 'escuro' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            <Avatar nome={nome} />
+            <Avatar nome={nome} email={perfil.email} />
             <span className="usuario-nome">{nome}</span>
             <button className="btn-icone" onClick={sair} title="Sair" aria-label="Sair"><LogOut size={18} /></button>
           </div>

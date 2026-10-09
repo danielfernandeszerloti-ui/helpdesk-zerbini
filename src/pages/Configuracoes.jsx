@@ -3,6 +3,7 @@ import { Plus, Save, Tags, Layers, Users, Mail, RefreshCw } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import { Link } from 'react-router-dom'
+import { Avatar } from '../components/ui'
 import { mensagemErro, CORES_ETAPA, nomeDeEmail, codigo, dataHora, tempoRelativo } from '../lib/util'
 
 const PAPEIS = {
@@ -175,6 +176,36 @@ function Etapas() {
   )
 }
 
+// ---------- Fotos do Teams ----------
+function FotosTeams() {
+  const { avisar } = useSessao()
+  const [st, setSt] = useState(null)
+  const [rodando, setRodando] = useState(false)
+  const carregar = () => supabase.rpc('hd_fotos_status').then(({ data }) => setSt(data))
+  useEffect(() => { carregar() }, [])
+  async function sincronizar() {
+    setRodando(true)
+    const { error } = await supabase.rpc('hd_fotos_disparar')
+    if (error) { setRodando(false); return avisar(mensagemErro(error), 'erro') }
+    avisar('Buscando as fotos no Microsoft 365… leva até 1 minuto.')
+    setTimeout(async () => { await carregar(); setRodando(false) }, 25000)
+  }
+  const r = st?.resposta
+  let erroMsg = ''
+  if (r && !(r.status >= 200 && r.status < 300)) { try { erroMsg = JSON.parse(r.msg).erro } catch { erroMsg = r.msg || 'sem resposta' } }
+  return (
+    <div className={'cartao config-linha ' + (r ? (erroMsg ? 'status-erro' : 'status-ok') : '')}>
+      <div>
+        <strong>Fotos do Teams</strong>
+        <small className="sub">
+          {erroMsg ? `Falhou: ${erroMsg}` : st?.ultima ? `${st.total} e-mails com foto · ${st.ultima.split(' · ').slice(1).join(' · ')}` : 'Ainda não sincronizado. Atualiza sozinho todo dia às 6h.'}
+        </small>
+      </div>
+      <button className="btn btn-leve" onClick={sincronizar} disabled={rodando}><RefreshCw size={15} className={rodando ? 'girando' : ''} /> {rodando ? 'Sincronizando…' : 'Sincronizar agora'}</button>
+    </div>
+  )
+}
+
 // ---------- Equipe ----------
 function Equipe() {
   const { perfil, equipe, carregarEquipe, avisar } = useSessao()
@@ -227,6 +258,7 @@ function Equipe() {
           <button className="btn btn-primario"><Plus size={16} /> Adicionar</button>
         </form>
       )}
+      <FotosTeams />
       <div className="cartao config-linha">
         <div>
           <strong>Atribuir novos chamados automaticamente a</strong>
@@ -245,7 +277,7 @@ function Equipe() {
             <tbody>
               {equipe.map((m) => (
                 <tr key={m.email} className={m.ativo ? '' : 'inativa'}>
-                  <td><strong>{m.nome || nomeDeEmail(m.email)}</strong><small className="sub">{m.email}</small></td>
+                  <td><div className="pessoa-cel"><Avatar nome={m.nome || nomeDeEmail(m.email)} email={m.email} /><span><strong>{m.nome || nomeDeEmail(m.email)}</strong><small className="sub">{m.email}</small></span></div></td>
                   <td>
                     {admin ? (
                       <select value={m.papel} onChange={(e) => alterar(m.email, { papel: e.target.value }, 'Perfil atualizado')} aria-label="Perfil">

@@ -823,3 +823,24 @@ html[data-tema="escuro"] .estrelas-texto i { color: #4a5068; }
 .satisf-topo small { color: var(--texto-3); }
 .satisf-coment { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13px; color: var(--texto-2); }
 .av-corpo small .btn-link, .av-feita .btn-link { padding: 0; display: inline; font-size: inherit; }
+
+/* Avatares: foto do Teams ou iniciais com cor fixa por pessoa */
+.avatar-foto { object-fit: cover; background: var(--sup-3); padding: 0; }
+.av-c0 { background: #e3e7fb; color: #2f42c4; }
+.av-c1 { background: #dcf5f3; color: #0b7a76; }
+.av-c2 { background: #fde4ee; color: #b0275c; }
+.av-c3 { background: #fdeedb; color: #a3520b; }
+.av-c4 { background: #e9e2fb; color: #5b3ab8; }
+.av-c5 { background: #def2e2; color: #24763a; }
+.av-c6 { background: #e0eefb; color: #1f5f9e; }
+.av-c7 { background: #f3e6dc; color: #7a4a2a; }
+html[data-tema="escuro"] .av-c0 { background: #263070; color: #c3cbff; }
+html[data-tema="escuro"] .av-c1 { background: #154a48; color: #a8efe9; }
+html[data-tema="escuro"] .av-c2 { background: #5a1f37; color: #ffc3da; }
+html[data-tema="escuro"] .av-c3 { background: #5a3a14; color: #ffd8a8; }
+html[data-tema="escuro"] .av-c4 { background: #3b2a6e; color: #d7c8ff; }
+html[data-tema="escuro"] .av-c5 { background: #1d4a28; color: #b8ebc3; }
+html[data-tema="escuro"] .av-c6 { background: #1b3d5e; color: #b9dcff; }
+html[data-tema="escuro"] .av-c7 { background: #4a3324; color: #f0d2bd; }
+.pessoa-cel { display: flex; align-items: center; gap: 10px; }
+.pessoa-cel > span { min-width: 0; }

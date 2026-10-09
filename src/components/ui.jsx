@@ -1,9 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { Paperclip, Upload, X, FileText } from 'lucide-react'
+import { useSessao } from '../lib/sessao'
 import { STATUS, PRIORIDADE, TIPOS, iniciais, tamanhoLegivel, LIMITE_ARQUIVO, situacaoSla, dataHora } from '../lib/util'
 
-export function Avatar({ nome, pequeno }) {
-  return <span className={'avatar' + (pequeno ? ' avatar-p' : '')} aria-hidden>{iniciais(nome)}</span>
+// cor fixa por pessoa para as iniciais
+function corDe(chave) {
+  let h = 0
+  for (const ch of String(chave || '').toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return h % 8
+}
+
+export function Avatar({ nome, email, pequeno }) {
+  const { fotos } = useSessao()
+  const url = email ? fotos?.[String(email).toLowerCase()] : null
+  const [falhou, setFalhou] = useState(false)
+  const classe = 'avatar' + (pequeno ? ' avatar-p' : '')
+  if (url && !falhou) return <img src={url} alt="" className={classe + ' avatar-foto'} loading="lazy" onError={() => setFalhou(true)} aria-hidden />
+  return <span className={`${classe} av-c${corDe(email || nome)}`} aria-hidden>{iniciais(nome)}</span>
 }
 
 export function StatusBadge({ status }) {

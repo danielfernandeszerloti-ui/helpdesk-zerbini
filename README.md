@@ -154,6 +154,11 @@ Variáveis na Vercel (além das de notificação):
 | `IMAP_PORT` (opcional) | padrão: tenta `993` e depois `143` |
 | `IMAP_USER` / `IMAP_PASS` (opcional) | padrão: os mesmos `SMTP_USER` / `SMTP_PASS` |
 
+### Fotos do Teams
+As fotos de perfil vêm do Microsoft 365 (as mesmas do Teams) via Microsoft Graph: `/api/sincronizar-fotos` roda todo dia às 6h10 e pelo botão **Configurações → Equipe → Fotos do Teams → Sincronizar agora**. Quem não tem foto aparece com iniciais numa cor fixa.
+
+Requer um app registrado no Entra ID (inquilino único) com a permissão de **aplicativo** `User.Read.All` e consentimento do administrador, e na Vercel: `MS_TENANT_ID`, `MS_CLIENT_ID`, `MS_CLIENT_SECRET` (o segredo vence — renove no Entra e atualize a variável) e `SUPABASE_SECRET_KEY`.
+
 ### Atendimento e aparência
 - **Configurações → Equipe → Atende chamados**: define quem aparece em "Atribuído a" e recebe e-mail de chamado novo. Quem não atende (ex.: gestores) continua vendo tudo.
 - **Atribuir novos chamados automaticamente a**: responsável padrão dos chamados novos fora do Kanban (`hd_config.responsavel_padrao`).

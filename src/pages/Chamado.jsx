@@ -491,7 +491,7 @@ export default function Chamado() {
           )}
           <article className="mensagem mensagem-inicial cartao">
             <header>
-              <Avatar nome={nomeSolicitante} />
+              <Avatar nome={nomeSolicitante} email={chamado.solicitante_email} />
               <div>
                 <strong>{nomeSolicitante}</strong>
                 <small>
@@ -512,7 +512,7 @@ export default function Chamado() {
           ) : (
             <article key={m.id} className={'mensagem cartao' + (m.interna ? ' interna' : '') + (m.autor_email === chamado.solicitante_email ? '' : ' da-ti')}>
               <header>
-                <Avatar nome={m.autor_email === chamado.solicitante_email ? nomeSolicitante : (m.autor_nome || nomeDeEmail(m.autor_email))} />
+                <Avatar email={m.autor_email} nome={m.autor_email === chamado.solicitante_email ? nomeSolicitante : (m.autor_nome || nomeDeEmail(m.autor_email))} />
                 <div>
                   <strong>
                     {m.autor_email === chamado.solicitante_email ? nomeSolicitante : (m.autor_nome || nomeDeEmail(m.autor_email))}
@@ -684,7 +684,7 @@ export default function Chamado() {
           <div className="cartao painel-lateral">
             <h3>Solicitante</h3>
             <div className="solicitante">
-              <Avatar nome={nomeSolicitante} />
+              <Avatar nome={nomeSolicitante} email={chamado.solicitante_email} />
               <div>
                 <strong>{nomeSolicitante}</strong>
                 <small>{chamado.solicitante_email}</small>

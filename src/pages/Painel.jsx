@@ -7,7 +7,7 @@ import {
   codigo, dataHora, emAndamento, situacaoSla, hojeExtenso, nomeDeEmail, baixarCsv,
   STATUS, STATUS_ORDEM, PRIORIDADE, PRIORIDADE_ORDEM, ORIGENS, TIPOS, moeda,
 } from '../lib/util'
-import { StatusBadge, PrioridadeBadge, SlaTexto, Vazio, TipoBadge } from '../components/ui'
+import { StatusBadge, PrioridadeBadge, SlaTexto, Vazio, TipoBadge, Avatar } from '../components/ui'
 
 const CARDS = [
   { chave: 'nao_lidos', rotulo: 'Não lidos', teste: (c) => emAndamento(c) && !c.lido_agente },
@@ -233,7 +233,7 @@ export default function Painel() {
                         {c.titulo}
                       </Link>
                     </td>
-                    <td>{c.solicitante_nome || nomeDeEmail(c.solicitante_email)}{c.setor && <small className="sub">{c.setor}</small>}</td>
+                    <td><div className="pessoa-cel"><Avatar pequeno nome={c.solicitante_nome || nomeDeEmail(c.solicitante_email)} email={c.solicitante_email} /><span>{c.solicitante_nome || nomeDeEmail(c.solicitante_email)}{c.setor && <small className="sub">{c.setor}</small>}</span></div></td>
                     <td>{c.categoria?.nome || '—'}{TIPOS[c.tipo] && <small className="sub">{TIPOS[c.tipo].rotulo}</small>}</td>
                     <td className="nowrap">{dataHora(c.atualizado_em)}</td>
                     <td className="nowrap">{dataHora(c.criado_em)}</td>

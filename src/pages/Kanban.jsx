@@ -38,7 +38,7 @@ function Cartao({ c, tarefas, atrasado, arrastando, overlay }) {
           </span>
         ) : <span className="kb-data vazio">Sem previsão</span>}
         {c.atribuido_email
-          ? <span title={nomeDeEmail(c.atribuido_email)}><Avatar nome={nomeDeEmail(c.atribuido_email)} pequeno /></span>
+          ? <span title={nomeDeEmail(c.atribuido_email)}><Avatar nome={nomeDeEmail(c.atribuido_email)} email={c.atribuido_email} pequeno /></span>
           : <span className="kb-sem-resp" title="Sem responsável">?</span>}
       </div>
     </div>

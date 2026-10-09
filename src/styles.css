@@ -791,3 +791,35 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .tabela-colada { max-width: 100%; }
 .tabela-colada td { white-space: normal; min-width: 60px; max-width: 520px; overflow-wrap: anywhere; vertical-align: top; }
 .tabela-colada table { white-space: normal; }
+
+/* Avaliação */
+.estrelas { display: flex; align-items: center; gap: 2px; margin: 4px 0 2px; flex-wrap: wrap; }
+.estrela { background: none; border: 0; padding: 2px; cursor: pointer; color: #c9ccd8; line-height: 0; border-radius: 6px; transition: transform .1s, color .1s; }
+.estrela:hover:not(:disabled) { transform: scale(1.12); }
+.estrela.cheia { color: #f5a400; }
+.estrela.cheia svg { fill: #f5a400; }
+.estrela:focus-visible { outline: 2px solid var(--roxo); }
+.estrela-rotulo { margin-left: 8px; font-size: 13px; font-weight: 600; color: var(--texto-2); min-width: 70px; }
+html[data-tema="escuro"] .estrela { color: #4a5068; }
+.confirmar-resolucao.avaliar { align-items: flex-start; }
+.av-corpo { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.av-comentario { display: grid; gap: 8px; margin-top: 4px; }
+.av-comentario textarea { width: 100%; }
+.av-comentario .confirmar-botoes { justify-content: flex-end; }
+.av-feita { display: flex; align-items: center; gap: 10px; }
+.estrelas-texto { color: #f5a400; letter-spacing: 1px; font-size: 18px; }
+.estrelas-texto i { font-style: normal; color: #c9ccd8; }
+html[data-tema="escuro"] .estrelas-texto i { color: #4a5068; }
+.estrelas-texto.mini { font-size: 12px; }
+.estrela-unica { color: #f5a400; }
+.av-resumo { margin: -4px 0 12px; padding: 8px 10px; border-radius: 8px; background: var(--sup-2); display: grid; gap: 2px; font-size: 12.5px; color: var(--texto-2); }
+.av-resumo .estrelas-texto { font-size: 16px; }
+.av-resumo q { color: var(--texto); font-style: italic; }
+.av-resumo.nota-1, .av-resumo.nota-2 { border-left: 3px solid var(--rosa); }
+.av-resumo.nota-4, .av-resumo.nota-5 { border-left: 3px solid var(--serie-2); }
+.satisf-topo { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; }
+.satisf-topo > strong { font-size: 34px; line-height: 1; }
+.satisf-topo > span { display: grid; gap: 2px; }
+.satisf-topo small { color: var(--texto-3); }
+.satisf-coment { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; font-size: 13px; color: var(--texto-2); }
+.av-corpo small .btn-link, .av-feita .btn-link { padding: 0; display: inline; font-size: inherit; }

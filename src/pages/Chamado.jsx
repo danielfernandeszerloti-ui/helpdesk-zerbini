@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check, ThumbsUp, ThumbsDown, Hourglass, CheckCircle2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { ArrowLeft, Paperclip, Send, Copy, Lock, Monitor, Trash2, UserCheck, AlertTriangle, ListChecks, CalendarClock, Plus, X, Check, ThumbsUp, ThumbsDown, Hourglass, CheckCircle2, Star } from 'lucide-react'
 import { supabase, BUCKET } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import {
@@ -197,6 +197,92 @@ function TarefasChamado({ chamado, tarefas, recarregar, onErro, titulo, perfil }
   )
 }
 
+const ROTULO_NOTA = { 1: 'Ruim', 2: 'Regular', 3: 'Bom', 4: 'Muito bom', 5: 'Excelente' }
+
+function Estrelas({ valor, onEscolher, tamanho = 30, desabilitado }) {
+  const [sobre, setSobre] = useState(0)
+  const ativo = sobre || valor || 0
+  return (
+    <div className="estrelas" role="radiogroup" aria-label="Avaliação de 1 a 5" onMouseLeave={() => setSobre(0)}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button key={n} type="button" role="radio" aria-checked={valor === n} aria-label={`${n} de 5 — ${ROTULO_NOTA[n]}`} title={ROTULO_NOTA[n]}
+          className={'estrela' + (n <= ativo ? ' cheia' : '')} disabled={desabilitado}
+          onMouseEnter={() => setSobre(n)} onFocus={() => setSobre(n)} onBlur={() => setSobre(0)} onClick={() => onEscolher(n)}>
+          <Star size={tamanho} strokeWidth={1.6} />
+        </button>
+      ))}
+      <span className="estrela-rotulo">{ativo ? ROTULO_NOTA[ativo] : ''}</span>
+    </div>
+  )
+}
+
+function AvaliarAtendimento({ chamado, notaDoLink, onReabrir, avisar, onErro, recarregar }) {
+  const jaAvaliou = !!chamado.avaliado_em && (!chamado.resolvido_em || chamado.avaliado_em >= chamado.resolvido_em)
+  const [etapa, setEtapa] = useState(jaAvaliou ? 'feito' : 'nota')
+  const [comentario, setComentario] = useState(chamado.avaliacao_comentario || '')
+  const [enviando, setEnviando] = useState(false)
+  const usouLink = useRef(false)
+
+  const avaliar = useCallback(async (nota, coment = null) => {
+    setEnviando(true)
+    const { error } = await supabase.rpc('hd_avaliar', { p_id: chamado.id, p_nota: nota, p_comentario: coment })
+    setEnviando(false)
+    if (error) { onErro(mensagemErro(error)); return false }
+    recarregar()
+    return true
+  }, [chamado.id, onErro, recarregar])
+
+  // veio do link do e-mail (?avaliar=N): registra a nota direto
+  useEffect(() => {
+    if (!notaDoLink || usouLink.current) return
+    usouLink.current = true
+    avaliar(notaDoLink).then((ok) => { if (ok) { setEtapa('comentario'); avisar('Obrigado pela avaliação!') } })
+  }, [notaDoLink, avaliar, avisar])
+
+  async function escolher(n) {
+    if (await avaliar(n)) { setEtapa('comentario'); if (n >= 4) avisar('Obrigado pela avaliação!') }
+  }
+  async function enviarComentario(e) {
+    e.preventDefault()
+    if (comentario.trim() && !(await avaliar(chamado.avaliacao || notaDoLink, comentario))) return
+    setEtapa('feito')
+    if (comentario.trim()) avisar('Comentário enviado. Obrigado!')
+  }
+
+  return (
+    <div className="cartao confirmar-resolucao avaliar">
+      <CheckCircle2 size={22} />
+      <div className="av-corpo">
+        {etapa === 'nota' && <>
+          <strong>Seu chamado foi resolvido. Como foi o atendimento?</strong>
+          <Estrelas valor={chamado.avaliacao && jaAvaliou ? chamado.avaliacao : 0} onEscolher={escolher} desabilitado={enviando} />
+          <small>Ainda com problema? <button className="btn-link" onClick={onReabrir}>Reabrir chamado</button></small>
+        </>}
+        {etapa === 'comentario' && <>
+          <strong>Obrigado! Quer deixar um comentário? <span className="texto-suave">(opcional)</span></strong>
+          <Estrelas valor={chamado.avaliacao || notaDoLink} onEscolher={escolher} tamanho={22} desabilitado={enviando} />
+          <form onSubmit={enviarComentario} className="av-comentario">
+            <textarea rows={2} autoFocus value={comentario} onChange={(e) => setComentario(e.target.value)} maxLength={2000}
+              placeholder={(chamado.avaliacao || notaDoLink) <= 3 ? 'O que podemos melhorar?' : 'Conte o que achou do atendimento'} />
+            <div className="confirmar-botoes">
+              <button type="button" className="btn btn-leve" onClick={() => setEtapa('feito')} disabled={enviando}>Pular</button>
+              <button className="btn btn-primario" disabled={enviando || !comentario.trim()}>Enviar</button>
+            </div>
+          </form>
+        </>}
+        {etapa === 'feito' && <>
+          <strong>Obrigado pela avaliação!</strong>
+          <span className="av-feita">
+            <span className="estrelas-texto" aria-label={`${chamado.avaliacao} de 5`}>{'★'.repeat(chamado.avaliacao || 0)}<i>{'★'.repeat(5 - (chamado.avaliacao || 0))}</i></span>
+            <button className="btn-link" onClick={() => setEtapa('nota')}>alterar</button>
+          </span>
+          <small>Se o problema voltar, <button className="btn-link" onClick={onReabrir}>reabra o chamado</button>.</small>
+        </>}
+      </div>
+    </div>
+  )
+}
+
 function Andamento({ chamado, etapas }) {
   const ativas = etapas.filter((e) => e.ativa)
   const idx = ativas.findIndex((e) => e.id === chamado.etapa_id)
@@ -233,6 +319,9 @@ export default function Chamado() {
   const [interna, setInterna] = useState(false)
   const [doSolicitante, setDoSolicitante] = useState(false)
   const [reabrindo, setReabrindo] = useState(false)
+  const [params, setParams] = useSearchParams()
+  const [notaDoLink] = useState(() => { const n = Number(params.get('avaliar')); return n >= 1 && n <= 5 ? n : null })
+  useEffect(() => { if (params.get('avaliar')) setParams({}, { replace: true }) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [novoStatus, setNovoStatus] = useState('')
   const [arquivos, setArquivos] = useState([])
   const [enviando, setEnviando] = useState(false)
@@ -310,7 +399,6 @@ export default function Chamado() {
   const ativo = ativos.find((a) => a.id === chamado.ativo_id)
   const confirmando = chamado.status === 'resolvido' && souSolicitante && !agente
   const podeResponder = (agente || chamado.status !== 'cancelado') && (!confirmando || reabrindo)
-  const jaConfirmou = mensagens.some((m) => m.tipo === 'evento' && /confirmou que o problema foi resolvido/.test(m.corpo) && (!chamado.resolvido_em || m.criado_em >= chamado.resolvido_em))
   const erro = (m) => avisar(m, 'erro')
   const abertas = tarefas.filter((t) => !t.feita)
   const confirmarFinal = (msg) => window.confirm(
@@ -441,24 +529,8 @@ export default function Chamado() {
           ))}
 
           {confirmando && !reabrindo && (
-            <div className="cartao confirmar-resolucao">
-              <CheckCircle2 size={22} />
-              <div>
-                <strong>{jaConfirmou ? 'Obrigado pela confirmação!' : 'Seu chamado foi resolvido. Ficou tudo certo?'}</strong>
-                <small>{jaConfirmou ? 'Se o problema voltar, é só reabrir o chamado.' : 'Se ainda tiver algum problema, reabra que a TI volta a atender.'}</small>
-              </div>
-              <div className="confirmar-botoes">
-                {!jaConfirmou && (
-                  <button className="btn btn-sucesso" onClick={async () => {
-                    const { error } = await supabase.rpc('hd_confirmar_resolucao', { p_id: chamadoId })
-                    if (error) return erro(mensagemErro(error))
-                    avisar('Obrigado! A TI foi avisada que está tudo certo.')
-                    carregar()
-                  }}><ThumbsUp size={16} /> Sim, resolveu</button>
-                )}
-                <button className="btn btn-leve" onClick={() => setReabrindo(true)}>Não, reabrir chamado</button>
-              </div>
-            </div>
+            <AvaliarAtendimento chamado={chamado} notaDoLink={notaDoLink} onReabrir={() => setReabrindo(true)}
+              avisar={avisar} onErro={erro} recarregar={carregar} />
           )}
           {confirmando && reabrindo && (
             <div className="alerta alerta-aviso">Conte o que ainda está acontecendo. Ao enviar, o chamado é reaberto. <button className="btn-link" onClick={() => setReabrindo(false)}>Cancelar</button></div>
@@ -518,6 +590,13 @@ export default function Chamado() {
                   {STATUS_ORDEM.map((s) => <option key={s} value={s}>{STATUS[s].rotulo}</option>)}
                 </select>
               </label>
+              {chamado.avaliacao && (
+                <p className={'av-resumo nota-' + chamado.avaliacao} title={chamado.avaliado_em ? 'Avaliado em ' + dataHora(chamado.avaliado_em) : ''}>
+                  <span className="estrelas-texto">{'★'.repeat(chamado.avaliacao)}<i>{'★'.repeat(5 - chamado.avaliacao)}</i></span>
+                  <span>Avaliação do solicitante</span>
+                  {chamado.avaliacao_comentario && <q>{chamado.avaliacao_comentario}</q>}
+                </p>
+              )}
               {perfil.eh_agente && (
                 <label className="campo">
                   <span>Tipo</span>

@@ -131,11 +131,11 @@ export default function Painel() {
 
   function exportar() {
     const linhas = [['Código', 'Título', 'Solicitante', 'E-mail', 'Setor', 'Categoria', 'Status', 'Prioridade',
-      'Atribuído a', 'Tipo', 'Origem', 'Aprovação', 'Valor estimado', 'Criado em', 'Última alteração', 'Prazo SLA', 'Resolvido em', 'AnyDesk', 'Descrição']]
+      'Atribuído a', 'Tipo', 'Origem', 'Aprovação', 'Valor estimado', 'Avaliação', 'Comentário da avaliação', 'Criado em', 'Última alteração', 'Prazo SLA', 'Resolvido em', 'AnyDesk', 'Descrição']]
     for (const c of filtrados) {
       linhas.push([codigo(c.id), c.titulo, c.solicitante_nome, c.solicitante_email, c.setor, c.categoria?.nome || '',
         STATUS[c.status]?.rotulo, PRIORIDADE[c.prioridade]?.rotulo, c.atribuido_email ? nomeDeEmail(c.atribuido_email) : '',
-        TIPOS[c.tipo]?.rotulo || '', ORIGENS[c.origem] || '', { pendente: 'Aguardando', aprovada: 'Aprovada', recusada: 'Recusada' }[c.aprovacao] || '', moeda(c.valor_estimado), dataHora(c.criado_em), dataHora(c.atualizado_em), c.prazo_sla ? dataHora(c.prazo_sla) : '',
+        TIPOS[c.tipo]?.rotulo || '', ORIGENS[c.origem] || '', { pendente: 'Aguardando', aprovada: 'Aprovada', recusada: 'Recusada' }[c.aprovacao] || '', moeda(c.valor_estimado), c.avaliacao || '', c.avaliacao_comentario || '', dataHora(c.criado_em), dataHora(c.atualizado_em), c.prazo_sla ? dataHora(c.prazo_sla) : '',
         c.resolvido_em ? dataHora(c.resolvido_em) : '', c.anydesk, c.descricao])
     }
     baixarCsv(`chamados-${new Date().toISOString().slice(0, 10)}.csv`, linhas)

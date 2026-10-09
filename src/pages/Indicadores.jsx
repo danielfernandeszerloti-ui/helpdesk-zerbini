@@ -91,7 +91,7 @@ export default function Indicadores() {
 
   async function carregar() {
     setCarregando(true)
-    const { data, error } = await supabase.rpc('hd_dash_chamados_v2', { p_desde: iniAnt.toISOString() })
+    const { data, error } = await supabase.rpc('hd_dash_chamados_v3', { p_desde: iniAnt.toISOString() })
     setCarregando(false)
     if (error) { setErro(mensagemErro(error)); return }
     setErro('')
@@ -160,8 +160,9 @@ export default function Indicadores() {
     const m = {}
     for (const c of lista) {
       const k = c.atribuido_email || ''
-      m[k] ||= { email: k, recebidos: 0, concluidos: 0, pendentes: 0, tempos: [], comSla: 0, noPrazo: 0 }
+      m[k] ||= { email: k, recebidos: 0, concluidos: 0, pendentes: 0, tempos: [], comSla: 0, noPrazo: 0, notas: [] }
       const g = m[k]
+      if (c.avaliacao && c.avaliado_em && entre(c.avaliado_em, ini, fim)) g.notas.push(c.avaliacao)
       if (entre(c.criado_em, ini, fim)) g.recebidos++
       if (!finalizado(c)) g.pendentes++
       if (c.status === 'resolvido' && entre(c.resolvido_em, ini, fim)) {
@@ -197,6 +198,20 @@ export default function Indicadores() {
       recusadas: decididas.filter((c) => c.aprovacao === 'recusada'),
       media: tempos.length ? tempos.reduce((a, b) => a + b, 0) / tempos.length : null,
       valor: decididas.filter((c) => c.aprovacao === 'aprovada').reduce((s, c) => s + Number(c.valor_estimado || 0), 0),
+    }
+  }, [lista, ini, fim])
+
+  const satisf = useMemo(() => {
+    const av = lista.filter((c) => c.avaliacao && c.avaliado_em && entre(c.avaliado_em, ini, fim))
+    const resolvidos = lista.filter((c) => c.status === 'resolvido' && c.resolvido_em && entre(c.resolvido_em, ini, fim)).length
+    const soma = av.reduce((t, c) => t + c.avaliacao, 0)
+    return {
+      total: av.length,
+      media: av.length ? soma / av.length : null,
+      boas: av.filter((c) => c.avaliacao >= 4).length,
+      taxa: resolvidos ? Math.round((av.length / resolvidos) * 100) : null,
+      dist: [5, 4, 3, 2, 1].map((n) => ({ rotulo: '★'.repeat(n), valor: av.filter((c) => c.avaliacao === n).length })),
+      comentarios: av.filter((c) => c.avaliacao_comentario).sort((a, b) => b.avaliado_em.localeCompare(a.avaliado_em)).slice(0, 4),
     }
   }, [lista, ini, fim])
 
@@ -297,6 +312,26 @@ export default function Indicadores() {
             </section>
 
             <section className="cartao dash-card">
+              <h2>Satisfação dos usuários</h2>
+              <p className="dash-sub">Avaliações feitas no período{satisf.taxa != null ? ` · ${satisf.taxa}% dos finalizados foram avaliados` : ''}</p>
+              {satisf.total ? <>
+                <div className="satisf-topo">
+                  <strong>{satisf.media.toFixed(1).replace('.', ',')}</strong>
+                  <span><span className="estrelas-texto">{'★'.repeat(Math.round(satisf.media))}<i>{'★'.repeat(5 - Math.round(satisf.media))}</i></span>
+                    <small>{satisf.total} avaliaç{satisf.total > 1 ? 'ões' : 'ão'} · {Math.round((satisf.boas / satisf.total) * 100)}% com 4 ou 5</small></span>
+                </div>
+                <BarrasH itens={satisf.dist} cor="#f5a400" />
+                {satisf.comentarios.length > 0 && (
+                  <ul className="satisf-coment">
+                    {satisf.comentarios.map((c) => (
+                      <li key={c.id}><span className="estrelas-texto mini">{'★'.repeat(c.avaliacao)}</span> “{c.avaliacao_comentario}” <Link to={`/chamado/${c.id}`}>{codigo(c.id)}</Link></li>
+                    ))}
+                  </ul>
+                )}
+              </> : <p className="texto-suave vazio-grafico">Nenhuma avaliação no período</p>}
+            </section>
+
+            <section className="cartao dash-card">
               <h2>Abertos por setor</h2>
               <p className="dash-sub">Quem mais abriu chamados no período</p>
               <BarrasH itens={porSetor} />
@@ -306,7 +341,7 @@ export default function Indicadores() {
               <h2>Por categoria</h2>
               <div className="tabela-rolagem">
                 <table className="tabela tabela-dash">
-                  <thead><tr><th>Categoria</th><th>Abertos</th><th>Concluídos</th><th>Pendentes</th><th>Resolução média</th><th>SLA cumprido</th></tr></thead>
+                  <thead><tr><th>Categoria</th><th>Abertos</th><th>Concluídos</th><th>Pendentes</th><th>Resolução média</th><th>SLA cumprido</th><th>Avaliação</th></tr></thead>
                   <tbody>
                     {porCategoria.map((g) => (
                       <tr key={g.nome}>
@@ -316,6 +351,7 @@ export default function Indicadores() {
                         <td>{g.pendentes}</td>
                         <td>{duracaoHoras(media(g.tempos))}</td>
                         <td>{g.comSla ? `${pct(g.noPrazo, g.comSla)}%` : <span className="texto-suave">sem SLA</span>}</td>
+                        <td>{g.notas.length ? <><span className="estrela-unica">★</span> {(g.notas.reduce((a, b) => a + b, 0) / g.notas.length).toFixed(1).replace('.', ',')} <small className="texto-suave">({g.notas.length})</small></> : <span className="texto-suave">—</span>}</td>
                       </tr>
                     ))}
                     {!porCategoria.length && <tr><td colSpan={6} className="texto-suave">Sem chamados no período</td></tr>}
@@ -340,7 +376,7 @@ export default function Indicadores() {
                         <td>{g.comSla ? `${pct(g.noPrazo, g.comSla)}%` : <span className="texto-suave">sem SLA</span>}</td>
                       </tr>
                     ))}
-                    {!porResponsavel.length && <tr><td colSpan={6} className="texto-suave">Sem chamados no período</td></tr>}
+                    {!porResponsavel.length && <tr><td colSpan={7} className="texto-suave">Sem chamados no período</td></tr>}
                   </tbody>
                 </table>
               </div>

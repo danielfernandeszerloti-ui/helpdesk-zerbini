@@ -68,6 +68,9 @@ A aba **Hoje** é a página inicial da TI: uma fila única do dia com as suas ta
   - **Recusar** → pede o motivo, que vai por e-mail ao solicitante; o chamado é cancelado.
 - Enquanto aguarda, ninguém finaliza o chamado. Painel tem o card *Aguardando aprovação*; o Hoje de quem aprova mostra um atalho; Indicadores mostram aprovadas, recusadas, valor e tempo médio até a decisão.
 
+### Avaliação do atendimento
+Ao finalizar, o colaborador vê *Como foi o atendimento?* com 1 a 5 estrelas (um clique) e comentário opcional; o e-mail de finalização traz as estrelas clicáveis. A nota aparece no chamado (lateral), nos Indicadores (card *Satisfação dos usuários* e coluna por responsável) e no Excel. Nota 1 ou 2 avisa o responsável por e-mail.
+
 ### Indicadores
 Aba **Indicadores** (TI/admin): SLA cumprido, abertos × concluídos, pendentes, tempo médio de 1ª resposta e de resolução (com mediana e comparação com o período anterior), pendentes por idade/prioridade, abertos por setor, tabelas por categoria e por responsável e os pendentes mais antigos. Filtros de período, categoria e responsável.
 - **SLA cumprido** = concluídos no período com prazo de SLA que foram resolvidos dentro do prazo.

@@ -1,0 +1,6 @@
+-- Já aplicado no projeto.
+-- hd_email_receber: título sem [External]/[Externo]/[EXT].
+-- hd_texto_html: lista numerada do Outlook ("1.<TAB>texto") não vira tabela nos e-mails.
+-- Limpeza dos chamados 16, 18 e 29 (vindos por e-mail): removidos <mailto:...>, <tel:...>, links duplicados
+-- e o prefixo [External] do título, mantendo a data de última alteração.
+-- (A função da Vercel passou a limpar isso nos e-mails novos: api/_lib/email.js → normalizar.)

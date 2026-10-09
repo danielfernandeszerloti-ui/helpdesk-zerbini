@@ -784,3 +784,10 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .confirmar-resolucao small { color: var(--texto-2); }
 .confirmar-botoes { display: flex; gap: 8px; flex-wrap: wrap; }
 .alerta-aviso { background: color-mix(in srgb, #f5b800 12%, var(--sup)); border: 1px solid #e8c766; color: var(--texto); }
+/* textos longos (links, e-mails) não podem esticar a coluna do chamado */
+.linha-tempo { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.linha-tempo > * { min-width: 0; }
+.mensagem .corpo { overflow-wrap: anywhere; }
+.tabela-colada { max-width: 100%; }
+.tabela-colada td { white-space: normal; min-width: 60px; max-width: 520px; overflow-wrap: anywhere; vertical-align: top; }
+.tabela-colada table { white-space: normal; }

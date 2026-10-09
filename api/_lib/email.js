@@ -37,6 +37,13 @@ export function textoDoEmail(parsed) {
 
 export function normalizar(t) {
   return String(t || '')
+    // sujeira do Outlook em texto puro: "nome@x <mailto:nome@x>" e "texto <https://link>"
+    .replace(/\s*<mailto:[^>\s]+>/gi, '')
+    .replace(/\s*<tel:[^>]+>/gi, '')
+    .replace(/<(https?:\/\/[^>\s]+)>/gi, ' $1 ')
+    .replace(/(https?:\/\/\S+)\s+\1(?=\s|$)/g, '$1')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/(\S) {2,}(?=\S)/g, '$1 ')
     .replace(/\r\n?/g, '\n')
     .replace(/ /g, ' ')
     .split('\n').map((l) => l.replace(/[ \t]+$/, '')).join('\n')

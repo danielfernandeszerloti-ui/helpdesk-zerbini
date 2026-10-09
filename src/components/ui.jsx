@@ -149,9 +149,11 @@ function separarBlocos(texto) {
       const ini = i
       while (i < linhas.length && linhas[i].includes('\t')) i++
       const grupo = linhas.slice(ini, i)
+      // lista numerada/com marcadores do Word/Outlook ("1.<TAB>texto") não é tabela
+      const ehLista = grupo.every((l) => /^\s*(\d{1,3}[.)]|[•·▪◦*o§-])\s*$/.test(l.split('\t')[0]))
       // 1 linha só vira tabela se tiver pelo menos 3 colunas
-      if (grupo.length >= 2 || grupo[0].split('\t').length >= 3) { blocos.push({ tabela: grupo.map((l) => l.split('\t').map((c) => c.trim())) }); continue }
-      blocos.push({ texto: grupo.join('\n') })
+      if (!ehLista && (grupo.length >= 2 || grupo[0].split('\t').length >= 3)) { blocos.push({ tabela: grupo.map((l) => l.split('\t').map((c) => c.trim())) }); continue }
+      blocos.push({ texto: grupo.map((l) => l.replace(/\t+/g, ' ')).join('\n') })
       continue
     }
     const ini = i

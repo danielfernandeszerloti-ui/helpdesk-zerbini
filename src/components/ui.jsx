@@ -38,7 +38,7 @@ export function SlaTexto({ chamado }) {
   if (chamado.aprovacao === 'pendente' && !['resolvido', 'cancelado'].includes(chamado.status)) return <span className="sla sla-aprovacao">Aguardando aprovação</span>
   const s = situacaoSla(chamado)
   if (s === 'sem') return <span className="texto-suave">Sem SLA</span>
-  if (s === 'pausado') return <span className="sla sla-pausado" title={`Prazo: ${dataHora(chamado.prazo_sla)}`}>Pausado<small className="sub">aguardando colaborador</small></span>
+  if (s === 'pausado') return <span className="sla sla-pausado" title={`Prazo: ${dataHora(chamado.prazo_sla)}`}>Pausado<small className="sub">{chamado.status === 'pausado' ? `aguardando ${chamado.aguardando || 'terceiros'}` : 'aguardando colaborador'}</small></span>
   if (s === 'atrasado') return <span className="sla sla-atrasado">Atrasado<small className="sub">{dataHora(chamado.prazo_sla)}</small></span>
   if (s === 'hoje') return <span className="sla sla-hoje">Hoje · {dataHora(chamado.prazo_sla).slice(11)}</span>
   return <span>{dataHora(chamado.prazo_sla)}</span>

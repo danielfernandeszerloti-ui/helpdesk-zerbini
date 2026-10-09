@@ -9,7 +9,7 @@ import {
   ORIGENS, ehExterno,
   TIPOS, moeda,
 } from '../lib/util'
-import { hojeISO, rotuloPrazo } from '../lib/tarefas'
+import { hojeISO, rotuloPrazo, proximoUtil } from '../lib/tarefas'
 import { TextoChamado, TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos, colarArquivos } from '../components/ui'
 
 const VIA = { email: 'por e-mail', telefone: 'por telefone', teams: 'pelo Teams', whatsapp: 'pelo WhatsApp', presencial: 'pessoalmente' }
@@ -197,6 +197,25 @@ function TarefasChamado({ chamado, tarefas, recarregar, onErro, titulo, perfil }
   )
 }
 
+// "Aguardando terceiros": quem e quando cobrar retorno
+function CamposTerceiros({ valor, onChange }) {
+  return (
+    <div className="campos-terceiros">
+      <label className="campo">
+        <span>Aguardando quem?</span>
+        <input value={valor.aguardando} onChange={(e) => onChange({ ...valor, aguardando: e.target.value })} maxLength={120}
+          placeholder="Ex.: Zebra (assistência), terceirizada, peça chegar" />
+      </label>
+      <label className="campo">
+        <span>Cobrar retorno em</span>
+        <input type="date" value={valor.retomar_em} min={hojeISO()} onChange={(e) => onChange({ ...valor, retomar_em: e.target.value })} />
+        <small className="dica">Vira uma tarefa no seu Hoje.</small>
+      </label>
+    </div>
+  )
+}
+const terceirosPadrao = (c) => ({ aguardando: c?.aguardando || '', retomar_em: c?.retomar_em || proximoUtil(proximoUtil()) })
+
 const ROTULO_NOTA = { 1: 'Ruim', 2: 'Regular', 3: 'Bom', 4: 'Muito bom', 5: 'Excelente' }
 
 function Estrelas({ valor, onEscolher, tamanho = 30, desabilitado }) {
@@ -319,6 +338,8 @@ export default function Chamado() {
   const [interna, setInterna] = useState(false)
   const [doSolicitante, setDoSolicitante] = useState(false)
   const [reabrindo, setReabrindo] = useState(false)
+  const [terceiros, setTerceiros] = useState(null) // painel aberto (lateral)
+  const [terceirosResp, setTerceirosResp] = useState(terceirosPadrao())
   const [params, setParams] = useSearchParams()
   const [notaDoLink] = useState(() => { const n = Number(params.get('avaliar')); return n >= 1 && n <= 5 ? n : null })
   useEffect(() => { if (params.get('avaliar')) setParams({}, { replace: true }) }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -427,7 +448,8 @@ export default function Chamado() {
       if (error) throw error
       if (arquivos.length) await enviarAnexos(chamadoId, arquivos, data.id)
       if (agente && novoStatus) {
-        const { error: e2 } = await supabase.from('hd_chamados').update({ status: novoStatus }).eq('id', chamadoId)
+        const extra = novoStatus === 'pausado' ? { aguardando: terceirosResp.aguardando.trim() || null, retomar_em: terceirosResp.retomar_em || null } : {}
+        const { error: e2 } = await supabase.from('hd_chamados').update({ status: novoStatus, ...extra }).eq('id', chamadoId)
         if (e2) throw e2
       }
       setTexto(''); setArquivos([]); setNovoStatus(''); setInterna(false); setDoSolicitante(false); setReabrindo(false)
@@ -553,10 +575,10 @@ export default function Chamado() {
                         <input type="checkbox" checked={doSolicitante} onChange={(e) => { setDoSolicitante(e.target.checked); if (e.target.checked) setInterna(false) }} /> Resposta do solicitante
                       </label>
                     )}
-                    <select value={novoStatus} onChange={(e) => setNovoStatus(e.target.value)} aria-label="Mudar status ao enviar">
+                    <select value={novoStatus} onChange={(e) => { setNovoStatus(e.target.value); if (e.target.value === 'pausado') setTerceirosResp(terceirosPadrao(chamado)) }} aria-label="Mudar status ao enviar">
                       <option value="">Manter status</option>
                       <option value="em_espera">e aguardar colaborador</option>
-                      <option value="pausado">e pausar</option>
+                      <option value="pausado">e aguardar terceiros</option>
                       <option value="resolvido">e marcar como resolvido</option>
                     </select>
                   </>
@@ -565,6 +587,7 @@ export default function Chamado() {
                   <Send size={16} /> {enviando ? 'Enviando…' : 'Enviar'}
                 </button>
               </div>
+              {agente && novoStatus === 'pausado' && <CamposTerceiros valor={terceirosResp} onChange={setTerceirosResp} />}
             </form>
           )}
         </section>
@@ -583,13 +606,35 @@ export default function Chamado() {
               <h3>Atendimento</h3>
               <label className="campo">
                 <span>Status</span>
-                <select value={chamado.status} disabled={salvando} onChange={(e) => {
+                <select value={terceiros ? 'pausado' : chamado.status} disabled={salvando} onChange={(e) => {
                   if (e.target.value === 'resolvido' && abertas.length && !confirmarFinal()) return
+                  if (e.target.value === 'pausado') { setTerceiros(terceirosPadrao(chamado)); return }
+                  setTerceiros(null)
                   atualizar({ status: e.target.value }, 'Status atualizado')
                 }}>
                   {STATUS_ORDEM.map((s) => <option key={s} value={s}>{STATUS[s].rotulo}</option>)}
                 </select>
               </label>
+              {terceiros && (
+                <div className="painel-terceiros">
+                  <CamposTerceiros valor={terceiros} onChange={setTerceiros} />
+                  <div className="confirmar-botoes">
+                    <button className="btn btn-leve" onClick={() => setTerceiros(null)}>Cancelar</button>
+                    <button className="btn btn-primario" disabled={salvando} onClick={async () => {
+                      await atualizar({ status: 'pausado', aguardando: terceiros.aguardando.trim() || null, retomar_em: terceiros.retomar_em || null },
+                        terceiros.retomar_em ? `Aguardando terceiros · cobrança agendada para ${rotuloPrazo(terceiros.retomar_em).toLowerCase()}` : 'Aguardando terceiros')
+                      setTerceiros(null)
+                    }}>Salvar</button>
+                  </div>
+                </div>
+              )}
+              {!terceiros && chamado.status === 'pausado' && (
+                <p className="info-terceiros">
+                  Aguardando <b>{chamado.aguardando || 'terceiros'}</b>
+                  {chamado.retomar_em && <> · cobrar {rotuloPrazo(chamado.retomar_em).toLowerCase()}</>}
+                  {' '}<button className="btn-link" onClick={() => setTerceiros(terceirosPadrao(chamado))}>alterar</button>
+                </p>
+              )}
               {chamado.avaliacao && (
                 <p className={'av-resumo nota-' + chamado.avaliacao} title={chamado.avaliado_em ? 'Avaliado em ' + dataHora(chamado.avaliado_em) : ''}>
                   <span className="estrelas-texto">{'★'.repeat(chamado.avaliacao)}<i>{'★'.repeat(5 - chamado.avaliacao)}</i></span>
@@ -663,6 +708,7 @@ export default function Chamado() {
               <h3>Detalhes</h3>
               <dl className="detalhes">
                 <dt>Status</dt><dd><StatusBadge status={chamado.status} /></dd>
+                {chamado.status === 'pausado' && <><dt>Aguardando</dt><dd>{chamado.aguardando || 'Terceiros'}</dd></>}
                 {chamado.aprovacao && <><dt>Aprovação</dt><dd className={'aprov-col ' + chamado.aprovacao}>{{ pendente: 'Aguardando a gerência', aprovada: 'Aprovada', recusada: 'Não aprovada' }[chamado.aprovacao]}</dd></>}
                 {chamado.valor_estimado != null && <><dt>Valor estimado</dt><dd>{moeda(chamado.valor_estimado)}</dd></>}
                 <dt>Categoria</dt><dd>{chamado.categoria?.nome || '—'}</dd>

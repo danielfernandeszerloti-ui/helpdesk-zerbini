@@ -844,3 +844,13 @@ html[data-tema="escuro"] .av-c6 { background: #1b3d5e; color: #b9dcff; }
 html[data-tema="escuro"] .av-c7 { background: #4a3324; color: #f0d2bd; }
 .pessoa-cel { display: flex; align-items: center; gap: 10px; }
 .pessoa-cel > span { min-width: 0; }
+.badge-laranja { background: #ffedd5; color: #9a3412; }
+html[data-tema="escuro"] .badge-laranja { background: #4a2a12; color: #fdba74; }
+.campos-terceiros { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.campos-terceiros .campo { margin: 0; }
+.lateral .campos-terceiros { grid-template-columns: 1fr; margin-top: 0; }
+.painel-terceiros { display: grid; gap: 10px; padding: 12px; margin: -4px 0 12px; border-radius: 8px; background: var(--sup-2); border: 1px solid var(--linha); }
+.painel-terceiros .confirmar-botoes { justify-content: flex-end; }
+.info-terceiros { margin: -4px 0 12px; padding: 8px 10px; border-radius: 8px; background: var(--sup-2); border-left: 3px solid var(--laranja); font-size: 12.5px; color: var(--texto-2); }
+@media (max-width: 640px) { .campos-terceiros { grid-template-columns: 1fr; } }
+.campos-terceiros { align-items: start; }

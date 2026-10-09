@@ -14,7 +14,7 @@ const CARDS = [
   { chave: 'abertos', rotulo: 'Abertos', teste: emAndamento },
   { chave: 'em_espera', rotulo: 'Em espera', teste: (c) => c.status === 'em_espera' },
   { chave: 'atrasados', rotulo: 'Em atraso', teste: (c) => situacaoSla(c) === 'atrasado', alerta: true },
-  { chave: 'pausados', rotulo: 'Pausados', teste: (c) => c.status === 'pausado' },
+  { chave: 'pausados', rotulo: 'Aguardando terceiros', teste: (c) => c.status === 'pausado' },
   { chave: 'nao_atribuidos', rotulo: 'Não atribuídos', teste: (c) => emAndamento(c) && !c.atribuido_email },
   { chave: 'hoje', rotulo: 'Encerram hoje', teste: (c) => situacaoSla(c) === 'hoje' },
   { chave: 'aprovacao', rotulo: 'Aguardando aprovação', teste: (c) => emAndamento(c) && c.aprovacao === 'pendente', destaque: true },

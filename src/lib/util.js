@@ -6,7 +6,7 @@ export const STATUS = {
   novo: { rotulo: 'Novo', cor: 'turquesa' },
   aberto: { rotulo: 'Aberto', cor: 'roxo' },
   em_espera: { rotulo: 'Em espera', cor: 'amarelo' },
-  pausado: { rotulo: 'Pausado', cor: 'cinza' },
+  pausado: { rotulo: 'Aguardando terceiros', cor: 'laranja' },
   resolvido: { rotulo: 'Resolvido', cor: 'verde' },
   cancelado: { rotulo: 'Cancelado', cor: 'cinza' },
 }
@@ -54,7 +54,7 @@ export function tempoRelativo(iso) {
 export function situacaoSla(c) {
   if (!c.prazo_sla) return 'sem'
   if (!emAndamento(c)) return 'ok'
-  if (c.status === 'em_espera') return 'pausado'
+  if (c.status === 'em_espera' || c.status === 'pausado') return 'pausado'
   const prazo = new Date(c.prazo_sla)
   if (prazo < new Date()) return 'atrasado'
   if (diaSP(prazo) === diaSP(new Date())) return 'hoje'
@@ -171,6 +171,7 @@ export function duracaoHoras(h) {
 export function previsaoColaborador(c) {
   if (!c.prazo_sla || !emAndamento(c) || c.etapa_id) return null
   if (c.status === 'em_espera') return { tipo: 'pausado', texto: 'Prazo pausado — aguardando sua resposta' }
+  if (c.status === 'pausado') return { tipo: 'pausado', texto: `Aguardando ${c.aguardando || 'terceiros'} — o prazo volta a contar quando houver retorno` }
   const quando = new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
     .format(new Date(c.prazo_sla)).replace(/,/g, '').replace(/ (\d{2}:\d{2})$/, ' às $1')
   if (new Date(c.prazo_sla) < new Date()) return { tipo: 'vencido', texto: `Em atendimento — a previsão era ${quando}` }

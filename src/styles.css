@@ -764,7 +764,7 @@ html[data-tema="escuro"] .pilula-aprov { color: #f5c542; }
 .config-conteudo .tabela-edicao td:first-child input { min-width: 230px; }
 .config-conteudo .tabela-edicao input[type=number] { width: 84px; }
 .config-conteudo .tabela-edicao select { min-width: 132px; }
-.pagina-config { max-width: 1120px; }
+.pagina-config { max-width: 1280px; }
 
 /* Trechos colados do Excel */
 .tabela-colada { overflow-x: auto; margin: 8px 0; width: fit-content; border: 1px solid var(--linha); border-radius: 8px; max-width: 100%; }

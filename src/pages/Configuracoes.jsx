@@ -15,8 +15,8 @@ const PAPEIS = {
 
 // ---------- Categorias ----------
 function LinhaCategoria({ cat, onSalvo }) {
-  const { avisar } = useSessao()
-  const [f, setF] = useState({ nome: cat.nome, sla_horas: cat.sla_horas ?? '', ordem: cat.ordem, ativa: cat.ativa, kanban: cat.kanban, tipo_padrao: cat.tipo_padrao, exige_aprovacao: cat.exige_aprovacao })
+  const { avisar, equipe } = useSessao()
+  const [f, setF] = useState({ nome: cat.nome, sla_horas: cat.sla_horas ?? '', ordem: cat.ordem, ativa: cat.ativa, kanban: cat.kanban, tipo_padrao: cat.tipo_padrao, exige_aprovacao: cat.exige_aprovacao, responsavel_email: cat.responsavel_email || '' })
   const mudou = f.nome !== cat.nome || String(f.sla_horas) !== String(cat.sla_horas ?? '') || Number(f.ordem) !== cat.ordem
 
   async function salvar(campos = f) {
@@ -24,6 +24,7 @@ function LinhaCategoria({ cat, onSalvo }) {
       nome: campos.nome.trim(), sla_horas: campos.sla_horas === '' ? null : Number(campos.sla_horas),
       ordem: Number(campos.ordem) || 0, ativa: campos.ativa, kanban: campos.kanban,
       tipo_padrao: campos.tipo_padrao, exige_aprovacao: campos.exige_aprovacao,
+      responsavel_email: campos.responsavel_email || null,
     }).eq('id', cat.id)
     if (error) return avisar(mensagemErro(error), 'erro')
     avisar('Categoria salva')
@@ -47,6 +48,12 @@ function LinhaCategoria({ cat, onSalvo }) {
             <input type="checkbox" checked={f.exige_aprovacao} onChange={alternar('exige_aprovacao')} /><span>{f.exige_aprovacao ? 'Sim' : 'Não'}</span>
           </label>
         )}
+      </td>
+      <td>
+        <select value={f.responsavel_email} onChange={(e) => { const n = { ...f, responsavel_email: e.target.value }; setF(n); salvar(n) }} aria-label="Responsável padrão">
+          <option value="">{f.kanban ? 'Ninguém' : 'Padrão geral'}</option>
+          {equipe.filter((m) => m.ativo && m.atende && (m.papel !== 'dev' || f.kanban)).map((m) => <option key={m.email} value={m.email}>{m.nome || nomeDeEmail(m.email)}</option>)}
+        </select>
       </td>
       <td><label className="interruptor"><input type="checkbox" checked={f.kanban} onChange={alternar('kanban')} /><span>{f.kanban ? 'Sim' : 'Não'}</span></label></td>
       <td><label className="interruptor"><input type="checkbox" checked={f.ativa} onChange={alternar('ativa')} /><span>{f.ativa ? 'Ativa' : 'Inativa'}</span></label></td>
@@ -74,7 +81,7 @@ function Categorias() {
 
   return (
     <>
-      <p className="texto-suave">O SLA (em horas) define o prazo automático dos novos chamados. Categorias marcadas em <b>Kanban</b> aparecem no quadro de Desenvolvimento e ficam visíveis para os desenvolvedores. <b>Tipo</b> é o padrão dos chamados novos (dá para trocar em cada chamado). Com <b>Exige aprovação</b>, a gerência aprova antes do atendimento e o SLA só começa a contar depois. Inativas somem do formulário.</p>
+      <p className="texto-suave">O SLA (em horas) define o prazo automático dos novos chamados. Categorias marcadas em <b>Kanban</b> aparecem no quadro de Desenvolvimento e ficam visíveis para os desenvolvedores. <b>Tipo</b> é o padrão dos chamados novos (dá para trocar em cada chamado). Com <b>Exige aprovação</b>, a gerência aprova antes do atendimento e o SLA só começa a contar depois. <b>Responsável</b> recebe automaticamente os chamados novos da categoria ("Padrão geral" usa o definido em Equipe). Inativas somem do formulário.</p>
       <form className="cartao nova-categoria" onSubmit={criar}>
         <input placeholder="Nova categoria" value={nova.nome} onChange={(e) => setNova({ ...nova, nome: e.target.value })} maxLength={80} />
         <input type="number" min="1" placeholder="SLA (horas)" value={nova.sla_horas} onChange={(e) => setNova({ ...nova, sla_horas: e.target.value })} />
@@ -83,9 +90,9 @@ function Categorias() {
       <div className="cartao tabela-cartao">
         <div className="tabela-rolagem">
           <table className="tabela tabela-edicao">
-            <thead><tr><th>Nome</th><th>SLA (horas)</th><th>Ordem</th><th>Tipo</th><th>Exige aprovação</th><th>Kanban</th><th>Situação</th><th /></tr></thead>
+            <thead><tr><th>Nome</th><th>SLA (horas)</th><th>Ordem</th><th>Tipo</th><th>Exige aprovação</th><th>Responsável</th><th>Kanban</th><th>Situação</th><th /></tr></thead>
             <tbody>
-              {categorias.map((c) => <LinhaCategoria key={[c.id, c.nome, c.sla_horas, c.ordem, c.ativa, c.kanban, c.tipo_padrao, c.exige_aprovacao].join(':')} cat={c} onSalvo={carregarCategorias} />)}
+              {categorias.map((c) => <LinhaCategoria key={[c.id, c.nome, c.sla_horas, c.ordem, c.ativa, c.kanban, c.tipo_padrao, c.exige_aprovacao, c.responsavel_email].join(':')} cat={c} onSalvo={carregarCategorias} />)}
             </tbody>
           </table>
         </div>

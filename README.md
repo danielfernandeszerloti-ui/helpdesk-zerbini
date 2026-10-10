@@ -76,6 +76,14 @@ Aba **Indicadores** (TI/admin): SLA cumprido, abertos × concluídos, pendentes,
 - **SLA cumprido** = concluídos no período com prazo de SLA que foram resolvidos dentro do prazo.
 - **1ª resposta** = primeira mensagem da equipe visível ao colaborador (notas internas não contam).
 
+### Relatório semanal de TI
+Botão **Relatório semanal** em Indicadores (`/relatorio`). Período: segunda a sexta.
+- **Sexta ~16h** o sistema gera o rascunho da semana e manda um e-mail para o revisor (`responsavel_padrao`, ou `relatorio_revisor` em hd_config). Também aparece em **Hoje** como *Relatório semanal pronto para revisar*.
+- O rascunho traz: resumo, **indicadores** (recebidos, concluídos, pendentes, críticos = prioridade alta/urgente, fora do prazo, SLA, 1ª resposta e solução em horário útil, satisfação — todos comparados com a semana anterior), tabelas por categoria e responsável, **atividades** (concluídos por categoria, projetos que mudaram de etapa, tarefas avulsas concluídas), **pontos de atenção** detectados (críticos e atrasados em aberto, SLA < 85%, fila crescendo, pendentes > 15 dias, terceiros com retorno vencido, equipamento com 2+ chamados em 30 dias, setor/categoria repetidos, categoria em alta, mesmo solicitante 3+ vezes, sem responsável, avaliações 1–2) e **decisões da gerência** (aprovações pendentes).
+- Tudo é editável; pontos podem ser desmarcados. Salva sozinho. **Atualizar dados** recalcula números e pontos sem apagar seus textos.
+- **Plano de ação**: itens livres + sugestões (fora do prazo, terceiros a cobrar, entregas e tarefas da semana seguinte). Na semana seguinte os itens voltam para marcar *Feito / Em andamento / Não feito*, e isso vai no e-mail.
+- **Nada é enviado sem revisão**: o botão Enviar manda o e-mail para `relatorio_destinatarios` (padrão Amanda; alterável na própria tela). A gerência recebe o e-mail e um link para a versão online, e o histórico fica em `/relatorio`.
+
 ### 5. Notificações por e-mail
 O Supabase coloca os e-mails numa fila (`hd_notificacoes`) e, a cada minuto, chama `/api/notificar` (função da Vercel), que envia pelo SMTP da empresa. O envio sai pela Vercel porque as funções do Supabase não podem usar a porta 587.
 

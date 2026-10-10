@@ -10,6 +10,7 @@ import Configuracoes from './pages/Configuracoes'
 import Kanban from './pages/Kanban'
 import Indicadores from './pages/Indicadores'
 import Hoje from './pages/Hoje'
+import Relatorio from './pages/Relatorio'
 
 function Carregando() {
   return <div className="tela-cheia"><div className="spinner" aria-label="Carregando" /></div>
@@ -47,6 +48,8 @@ export default function App() {
         {(agente || dev) && <Route path="/hoje" element={<Hoje />} />}
         {agente && <Route path="/painel" element={<Painel />} />}
         {agente && <Route path="/indicadores" element={<Indicadores />} />}
+        {agente && <Route path="/relatorio" element={<Relatorio />} />}
+        {agente && <Route path="/relatorio/:id" element={<Relatorio />} />}
         {(agente || dev) && <Route path="/kanban" element={<Kanban />} />}
         {agente && <Route path="/configuracoes" element={<Configuracoes />} />}
         {agente && <Route path="/categorias" element={<Navigate to="/configuracoes" replace />} />}

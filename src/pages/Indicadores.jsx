@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowUp, ArrowDown, Minus, RefreshCw, AlertTriangle } from 'lucide-react'
+import { ArrowUp, ArrowDown, Minus, RefreshCw, AlertTriangle, FileText } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import { codigo, nomeDeEmail, duracaoHoras, PRIORIDADE, tempoRelativo, mensagemErro, moeda } from '../lib/util'
@@ -226,7 +226,10 @@ export default function Indicadores() {
           <h1>Indicadores</h1>
           <p className="texto-suave">{ini.toLocaleDateString('pt-BR')} a {new Date(fim - 1).toLocaleDateString('pt-BR')} · comparado com o período anterior de mesma duração</p>
         </div>
-        <button className="btn btn-leve" onClick={carregar} aria-label="Atualizar"><RefreshCw size={16} className={carregando ? 'girando' : ''} /></button>
+        <div className="linha-botoes">
+          <Link to="/relatorio" className="btn btn-primario"><FileText size={16} /> Relatório semanal</Link>
+          <button className="btn btn-leve" onClick={carregar} aria-label="Atualizar"><RefreshCw size={16} className={carregando ? 'girando' : ''} /></button>
+        </div>
       </div>
 
       <div className="barra-filtros cartao dash-filtros">

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Check, Plus, Repeat, Ticket, Pencil, Trash2, ArrowRight, CalendarDays, Flag, ShieldCheck, ChevronDown, ChevronRight, Inbox, RefreshCw,
+  Check, Plus, Repeat, Ticket, Pencil, Trash2, ArrowRight, CalendarDays, Flag, ShieldCheck, ChevronDown, ChevronRight, Inbox, RefreshCw, FileText,
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
@@ -217,8 +217,10 @@ function ItemChamado({ c, grupo }) {
 }
 
 export default function Hoje() {
-  const { perfil, avisar, etapas } = useSessao()
+  const { perfil, avisar, etapas, equipe } = useSessao()
   const [aprovar, setAprovar] = useState({ compras: 0, projetos: 0 })
+  const [relatorio, setRelatorio] = useState(null)
+  const atendo = equipe.some((m) => m.email === perfil.email && m.atende && m.papel !== 'dev')
   const etapaAprov = etapas.find((e) => e.aprovacao && e.ativa)?.id
   const [tarefas, setTarefas] = useState(null)
   const [chamados, setChamados] = useState([])
@@ -245,6 +247,12 @@ export default function Hoje() {
             .or(`aprovacao.eq.pendente${etapaAprov ? `,etapa_id.eq.${etapaAprov}` : ''}`).limit(500)
         : Promise.resolve({ data: [] }),
     ])
+    if (atendo) {
+      // rascunho do relatório semanal esperando revisão (a partir de sexta)
+      const { data: rel } = await supabase.from('hd_relatorios').select('id,inicio').eq('status', 'rascunho')
+        .lte('inicio', somarDias(hojeISO(), -4)).gte('inicio', somarDias(hojeISO(), -13)).order('inicio', { ascending: false }).limit(1)
+      setRelatorio(rel?.[0] || null)
+    }
     const lsAp = ap.data || []
     setAprovar({ compras: lsAp.filter((x) => x.aprovacao === 'pendente').length, projetos: lsAp.filter((x) => etapaAprov && x.etapa_id === etapaAprov).length })
     if (t.error) avisar(mensagemErro(t.error), 'erro')
@@ -252,7 +260,7 @@ export default function Hoje() {
     setChamados((c.data || []).filter((x) => emAndamento(x) && !x.etapa_id))
     setSemResp(s.count || 0)
     setAtualizando(false)
-  }, [perfil.email, perfil.eh_agente, perfil.pode_aprovar, etapaAprov, avisar])
+  }, [perfil.email, perfil.eh_agente, perfil.pode_aprovar, etapaAprov, avisar, atendo])
 
   useEffect(() => {
     carregar()
@@ -302,6 +310,7 @@ export default function Hoje() {
         <div className="hr-item azul"><strong>{grupos.proximas.length}</strong><span>próximos 7 dias</span></div>
         {aprovar.compras > 0 && <Link to="/painel?card=aprovacao" className="hr-item link aprov"><ShieldCheck size={16} /><span><b>{aprovar.compras}</b> aguardando sua aprovação</span></Link>}
         {aprovar.projetos > 0 && <Link to="/kanban" className="hr-item link aprov"><ShieldCheck size={16} /><span><b>{aprovar.projetos}</b> projeto{aprovar.projetos > 1 ? 's' : ''} para aprovar</span></Link>}
+        {relatorio && <Link to={'/relatorio/' + relatorio.id} className="hr-item link aprov"><FileText size={16} /><span>Relatório semanal <b>pronto para revisar</b></span></Link>}
         {semResp > 0 && <Link to="/painel?card=nao_atribuidos" className="hr-item link"><Inbox size={16} /><span><b>{semResp}</b> chamado{semResp > 1 ? 's' : ''} sem responsável</span></Link>}
       </div>
 

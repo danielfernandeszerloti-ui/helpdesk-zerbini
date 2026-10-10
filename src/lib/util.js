@@ -83,7 +83,7 @@ export function tamanhoLegivel(b) {
 export const LIMITE_ARQUIVO = 10 * 1024 * 1024
 
 // Reduz fotos grandes antes de enviar (economiza espaço no Supabase)
-async function comprimirImagem(arquivo) {
+export async function comprimirImagem(arquivo) {
   if (!/^image\/(jpeg|png|webp)$/.test(arquivo.type) || arquivo.size < 800 * 1024) return arquivo
   try {
     const bmp = await createImageBitmap(arquivo)
@@ -102,7 +102,7 @@ async function comprimirImagem(arquivo) {
   }
 }
 
-function nomeSeguro(nome) {
+export function nomeSeguro(nome) {
   return nome.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w.-]+/g, '_').slice(-80)
 }
 

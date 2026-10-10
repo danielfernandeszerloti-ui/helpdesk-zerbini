@@ -11,6 +11,7 @@ import {
 } from '../lib/util'
 import { hojeISO, rotuloPrazo, proximoUtil } from '../lib/tarefas'
 import { TextoChamado, TipoBadge, Avatar, StatusBadge, PrioridadeBadge, SlaTexto, SeletorArquivos, colarArquivos } from '../components/ui'
+import BaseNoChamado from '../components/BaseNoChamado'
 
 const VIA = { email: 'por e-mail', telefone: 'por telefone', teams: 'pelo Teams', whatsapp: 'pelo WhatsApp', presencial: 'pessoalmente' }
 
@@ -560,7 +561,7 @@ export default function Chamado() {
 
           {podeResponder && (
             <form className={'cartao resposta' + (interna && !doSolicitante ? ' interna' : '')} onSubmit={responder}>
-              <textarea rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} {...colarArquivos(setArquivos, erro, (m) => avisar(m))}
+              <textarea id="resposta-chamado" rows={4} value={texto} onChange={(e) => setTexto(e.target.value)} {...colarArquivos(setArquivos, erro, (m) => avisar(m))}
                 placeholder={doSolicitante ? `Cole aqui a resposta que ${nomeSolicitante.split(' ')[0]} enviou por e-mail…` : interna ? 'Nota interna — só a equipe vê' : agente && !souSolicitante ? `Responder para ${nomeSolicitante.split(' ')[0]}…` : 'Escreva uma mensagem para a TI… (Ctrl+V cola prints e arquivos)'}
                 onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) responder(e) }} />
               <div className="resposta-rodape">
@@ -725,6 +726,14 @@ export default function Chamado() {
 
           {agente && !ehProjeto && (
             <TarefasChamado chamado={chamado} tarefas={tarefas} recarregar={carregarTarefas} onErro={erro} titulo="Tarefas" perfil={perfil} />
+          )}
+
+          {agente && (
+            <BaseNoChamado chamado={chamado} avisar={avisar} onInserir={podeResponder ? (t) => {
+              setTexto((x) => (x.trim() ? x.trimEnd() + '\n\n' : '') + t)
+              setInterna(false)
+              setTimeout(() => { const el = document.getElementById('resposta-chamado'); el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); el?.focus() }, 50)
+            } : null} />
           )}
 
           <div className="cartao painel-lateral">

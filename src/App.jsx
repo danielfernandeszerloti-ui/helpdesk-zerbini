@@ -11,6 +11,7 @@ import Kanban from './pages/Kanban'
 import Indicadores from './pages/Indicadores'
 import Hoje from './pages/Hoje'
 import Relatorio from './pages/Relatorio'
+import Base from './pages/Base'
 
 function Carregando() {
   return <div className="tela-cheia"><div className="spinner" aria-label="Carregando" /></div>
@@ -45,6 +46,10 @@ export default function App() {
         <Route path="/meus" element={<MeusChamados />} />
         <Route path="/novo" element={<NovoChamado />} />
         <Route path="/chamado/:id" element={<Chamado />} />
+        <Route path="/base" element={<Base />} />
+        <Route path="/base/novo" element={<Base modo="novo" />} />
+        <Route path="/base/:id" element={<Base />} />
+        <Route path="/base/:id/editar" element={<Base modo="editar" />} />
         {(agente || dev) && <Route path="/hoje" element={<Hoje />} />}
         {agente && <Route path="/painel" element={<Painel />} />}
         {agente && <Route path="/indicadores" element={<Indicadores />} />}

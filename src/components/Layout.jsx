@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Bell, BellOff, LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, ListTodo, Moon, Sun, CircleHelp } from 'lucide-react'
-import { useState } from 'react'
+import { Bell, BellOff, LayoutDashboard, Inbox, Plus, Settings, LogOut, KanbanSquare, BarChart3, ListTodo, Moon, Sun, CircleHelp, BookOpen } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { useTema } from '../lib/tema'
 import MinhaConta from './MinhaConta'
 import { useAlertas } from '../lib/alertas'
@@ -14,6 +15,12 @@ export default function Layout() {
   const alertas = useAlertas(perfil)
   const [conta, setConta] = useState(false)
   const nome = perfil.nome || nomeDeEmail(perfil.email)
+  const equipe = perfil.eh_agente || perfil.eh_dev
+  const [temAjuda, setTemAjuda] = useState(false)
+  useEffect(() => {
+    if (equipe) return
+    supabase.from('hd_artigos').select('id', { count: 'exact', head: true }).then(({ count }) => setTemAjuda((count || 0) > 0))
+  }, [equipe])
   return (
     <div className="app">
       <header className="topo">
@@ -56,8 +63,10 @@ export default function Layout() {
           {perfil.eh_agente && <NavLink to="/painel"><LayoutDashboard size={17} /> Painel</NavLink>}
           {perfil.eh_agente && <NavLink to="/indicadores"><BarChart3 size={17} /> Indicadores</NavLink>}
           {(perfil.eh_agente || perfil.eh_dev) && <NavLink to="/kanban"><KanbanSquare size={17} /> Desenvolvimento</NavLink>}
+          {equipe && <NavLink to="/base"><BookOpen size={17} /> Base de conhecimento</NavLink>}
           <NavLink to="/meus"><Inbox size={17} /> Meus chamados</NavLink>
           <NavLink to="/novo"><Plus size={17} /> Novo chamado</NavLink>
+          {!equipe && temAjuda && <NavLink to="/base"><BookOpen size={17} /> Ajuda</NavLink>}
           {perfil.eh_agente && <NavLink to="/configuracoes"><Settings size={17} /> Configurações</NavLink>}
         </div>
       </nav>

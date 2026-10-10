@@ -76,6 +76,16 @@ Aba **Indicadores** (TI/admin): SLA cumprido, abertos × concluídos, pendentes,
 - **SLA cumprido** = concluídos no período com prazo de SLA que foram resolvidos dentro do prazo.
 - **1ª resposta** = primeira mensagem da equipe visível ao colaborador (notas internas não contam).
 
+### Base de conhecimento
+Aba **Base de conhecimento** (`/base`) para a equipe; colaboradores veem a aba **Ajuda** quando houver artigo público.
+- **Tipos**: Procedimento, Erro conhecido (sintoma/causa/solução), Configuração, Acesso, Pergunta frequente — cada um começa com um modelo de estrutura.
+- **Interna** (só TI/dev) ou **Pública** (colaboradores leem em Ajuda e recebem como sugestão ao digitar o título em *Novo chamado*). Status: publicado, rascunho ou arquivado.
+- Editor com prints colados (**Ctrl+V**), `## subtítulo`, `1. passo`, `- item`, `**negrito**`, `` `caminho` ``, `> aviso`; `#0042` vira link do chamado. Alerta quando o texto parece conter senha.
+- **No chamado** (lateral da TI): artigos vinculados, sugestões pelo título/descrição/categoria, *Buscar e vincular*, *Criar artigo deste chamado* (já vem com sintoma, solução a partir das respostas da TI e fica vinculado) e, para artigo público, o botão que coloca o link na resposta ao solicitante.
+- No artigo: chamados relacionados, leituras, "Este artigo ajudou?". Na lista: *O que vale documentar* (categorias com mais chamados em 30 dias sem artigo).
+- Artigos publicados/atualizados na semana entram no rascunho do relatório semanal.
+- Prints ficam no bucket `helpdesk` em `kb/…`; colaborador só acessa imagens de artigo público.
+
 ### Relatório semanal de TI
 Botão **Relatório semanal** em Indicadores (`/relatorio`). Período: segunda a sexta.
 - **Sexta ~16h** o sistema gera o rascunho da semana e manda um e-mail para o revisor (`responsavel_padrao`, ou `relatorio_revisor` em hd_config). Também aparece em **Hoje** como *Relatório semanal pronto para revisar*.

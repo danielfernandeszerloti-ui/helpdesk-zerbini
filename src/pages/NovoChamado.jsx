@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase'
 import { useSessao } from '../lib/sessao'
 import { Mail } from 'lucide-react'
 import { enviarAnexos, mensagemErro, nomeDeEmail, EXPEDIENTE, ORIGENS, agoraLocal } from '../lib/util'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Lightbulb } from 'lucide-react'
+import { buscar } from '../lib/base'
 import { SeletorArquivos, colarArquivos } from '../components/ui'
 
 export default function NovoChamado() {
@@ -116,6 +117,7 @@ export default function NovoChamado() {
           <span>Título <em>*</em></span>
           <input value={f.titulo} onChange={set('titulo')} maxLength={200} placeholder="Ex.: Impressora do estoque não imprime etiquetas" />
         </label>
+        {!emNomeDe && <SugestoesAjuda texto={`${f.titulo} ${f.titulo} ${f.descricao}`} categoriaId={Number(f.categoria_id) || null} />}
 
         <label className="campo">
           <span>Descrição <em>*</em></span>
@@ -207,6 +209,32 @@ export default function NovoChamado() {
           <button className="btn btn-primario" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar'}</button>
         </div>
       </form>
+    </div>
+  )
+}
+
+// Artigos públicos da base que podem resolver antes de abrir o chamado
+function SugestoesAjuda({ texto, categoriaId }) {
+  const [artigos, setArtigos] = useState([])
+  const [achados, setAchados] = useState([])
+  useEffect(() => {
+    supabase.from('hd_artigos').select('id,titulo,tags,resumo,conteudo,categoria_id').eq('status', 'publicado').eq('visibilidade', 'publica').limit(1000)
+      .then(({ data }) => setArtigos(data || []))
+  }, [])
+  useEffect(() => {
+    if (!artigos.length) return
+    const t = setTimeout(() => setAchados(texto.trim().length >= 6 ? buscar(artigos, texto, { categoriaId, minimo: 4 }).slice(0, 3) : []), 350)
+    return () => clearTimeout(t)
+  }, [texto, categoriaId, artigos])
+  if (!achados.length) return null
+  return (
+    <div className="kb-sugere" role="status">
+      <Lightbulb size={18} />
+      <div>
+        <strong>Isso pode resolver agora</strong>
+        <ul>{achados.map((a) => <li key={a.id}><Link to={'/base/' + a.id} target="_blank">{a.titulo}</Link></li>)}</ul>
+        <small>Se não resolver, continue abrindo o chamado normalmente.</small>
+      </div>
     </div>
   )
 }

@@ -465,3 +465,6 @@ grant execute on function public.hd_relatorio_salvar(bigint, jsonb) to authentic
 grant execute on function public.hd_relatorio_enviar(bigint, text, text) to authenticated;
 
 select cron.schedule('hd-relatorio-semanal', '52 18 * * 5', 'select public.hd_relatorio_cron()');
+
+alter function public.hd_cod(bigint) set search_path = public;
+alter function public.hd_brl(numeric) set search_path = public;
